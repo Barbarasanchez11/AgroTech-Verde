@@ -34,6 +34,8 @@ print(y.head())
 # 4. Separar en entrenamiento y prueba
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+print(X_train, X_test, y_train, y_test)
+
 
 # 5. Identificar columnas numéricas y categóricas
 num_cols = ["ph", "humedad", "temperatura", "precipitacion", "horas_de_sol"]
