@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay
+import pickle
 
 
 df=pd.read_csv('agrotech_data.csv')
@@ -88,3 +89,8 @@ plt.title("Matriz de confusión - SVM")
 plt.xticks(rotation=45)
 plt.show()
 
+with open("modelo_rf.pkl", "wb") as f:
+    pickle.dump(rf_pipeline, f)
+
+with open("label_encoder.pkl", "wb") as f:
+    pickle.dump(label_encoder, f)
