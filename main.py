@@ -1,2 +1,18 @@
-import panda as pd
+import pandas as pd
 import numpy as np
+
+np.random.seed(42)
+n = 1000
+
+data = {
+    'ph': np.round(np.random.uniform(5.8, 6.8, n), 2),
+    'humedad': np.round(np.random.uniform(0, 100, n), 2),
+    "tipo_de_suelo": np.random.choice(["arcilloso", "arenoso", "limoso", "rocoso"], n),
+    'temperatura': np.round(np.random.uniform(0, 40, n)),
+    'precipitacion': np.round(np.random.uniform(0, 300, n), 2),
+    'horas_de_sol': np.round(np.random.uniform(0, 16, n), 1),
+    'tipo_de_cultivo': np.random.choice(['maiz', 'trigo', 'arroz', 'soja', 'naranjas','uva','lentejas', 'zanahoria'], n),
+}
+
+df = pd.DataFrame(data)
+print(df.head())
