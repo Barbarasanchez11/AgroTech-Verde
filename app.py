@@ -14,12 +14,13 @@ st.title("🌱 Clasificador de Cultivos")
 st.write("Introduce las condiciones del terreno para predecir el tipo de cultivo adecuado.")
 
 # Entradas del usuario
-ph = st.slider("pH del suelo", 4.5, 8.5, 6.5)
-humedad = st.slider("Humedad (%)", 20, 90, 50)
-temperatura = st.slider("Temperatura (°C)", 10, 40, 25)
-precipitacion = st.slider("Precipitación (mm)", 0, 300, 100)
-horas_de_sol = st.slider("Horas de sol", 4, 12, 8)
-tipo_de_suelo = st.selectbox("Tipo de suelo", ["arcilloso", "arenoso", "franco"])
+ph = st.slider("pH del suelo", 5.8, 6.8, 6.3)
+humedad = st.slider("Humedad (%)", 0, 100, 50)
+temperatura = st.slider("Temperatura (°C)", 0, 40, 20)
+precipitacion = st.slider("Precipitación (mm)", 0, 300, 150)
+horas_de_sol = st.slider("Horas de sol", 0, 16, 8)
+tipo_de_suelo = st.selectbox("Tipo de suelo", ["arcilloso", "arenoso","limoso" ,"rocoso"])
+temporada = st.selectbox("Temporada", ['verano','otoño','invierno', 'primavera'])
 
 # Crear DataFrame de entrada
 input_data = pd.DataFrame([{
@@ -28,7 +29,8 @@ input_data = pd.DataFrame([{
     "temperatura": temperatura,
     "precipitacion": precipitacion,
     "horas_de_sol": horas_de_sol,
-    "tipo_de_suelo": tipo_de_suelo
+    "tipo_de_suelo": tipo_de_suelo,
+    "temporada": temporada
 }])
 
 # Botón para predecir
