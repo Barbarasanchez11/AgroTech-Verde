@@ -12,7 +12,7 @@ data = {
     'temperatura': np.round(np.random.uniform(0, 40, n)),
     'precipitacion': np.round(np.random.uniform(0, 300, n), 2),
     'horas_de_sol': np.round(np.random.uniform(0, 16, n), 1),
-    'temporada': np.choice(['verano','otoño','invierno', 'primavera'])
+    'temporada': np.random.choice(['verano','otoño','invierno', 'primavera'])
 }
 
 df = pd.DataFrame(data)
