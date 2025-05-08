@@ -8,6 +8,5 @@ pd.set_option('display.float_format', '{:.2f}'.format)
 
 
 print(df.head())
-
 print(df.info())
 print(df.describe())
