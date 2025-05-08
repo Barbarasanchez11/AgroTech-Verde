@@ -17,5 +17,5 @@ data = {
 
 df = pd.DataFrame(data)
 #print(df.head())
-df.to_csv('agrotech_data.csv', index=False)
+df.to_csv('agroTech_data.csv', index=False)
 
