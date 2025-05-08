@@ -87,3 +87,4 @@ ConfusionMatrixDisplay.from_predictions(y_test, y_pred_svm, display_labels=label
 plt.title("Matriz de confusión - SVM")
 plt.xticks(rotation=45)
 plt.show()
+
