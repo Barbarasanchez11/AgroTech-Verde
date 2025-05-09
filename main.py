@@ -24,11 +24,12 @@ for _ in range(n):
     cultivo = np.random.choice(cultivos)
     
     if cultivo == 'maiz':
+        data['tipo_de_cultivo'].append(cultivo)
         data['ph'].append(np.round(np.random.uniform(6.0, 6.8), 2))
         data['tipo_de_suelo'].append(np.random.choice(['arcilloso', 'limoso', 'arenoso'], p=[0.6, 0.3, 0.1]))
         data['humedad'].append(np.round(np.random.uniform(50, 70), 2))
-        data['temperatura'].append(np.round(np.random.uniform(22, 32)))  
-        data['precipitacion'].append(np.round(np.random.uniform(120, 220), 2)) 
+        data['temperatura'].append(np.round(np.random.uniform(22, 32)))
+        data['precipitacion'].append(np.round(np.random.uniform(120, 220), 2))
         data['horas_de_sol'].append(np.round(np.random.uniform(8, 12), 1))
         data['temporada'].append(np.random.choice(['primavera', 'verano'], p=[0.4, 0.6]))
     
@@ -53,17 +54,18 @@ for _ in range(n):
         data['temporada'].append(np.random.choice(['verano', 'primavera'], p=[0.6, 0.4]))
     
     elif cultivo == 'soja':
+        data['tipo_de_cultivo'].append(cultivo)
         data['ph'].append(np.round(np.random.uniform(6.0, 6.8), 2))
         data['tipo_de_suelo'].append(np.random.choice(['limoso', 'arcilloso', 'arenoso'], p=[0.5, 0.4, 0.1]))
         data['humedad'].append(np.round(np.random.uniform(50, 70), 2))
-        data['temperatura'].append(np.round(np.random.uniform(18, 28)))  
-        data['precipitacion'].append(np.round(np.random.uniform(80, 180), 2))  
+        data['temperatura'].append(np.round(np.random.uniform(18, 28)))
+        data['precipitacion'].append(np.round(np.random.uniform(80, 180), 2))
         data['horas_de_sol'].append(np.round(np.random.uniform(8, 12), 1))
         data['temporada'].append(np.random.choice(['primavera', 'verano'], p=[0.4, 0.6]))
     
     elif cultivo == 'naranjas':
         data['tipo_de_cultivo'].append(cultivo)
-        data['ph'].append(np.round(np.random.uniform(5.8, 6.5), 2))
+        data['ph'].append(np.round(np.random.uniform(5.6, 6.3), 2))
         data['tipo_de_suelo'].append(np.random.choice(['arenoso', 'limoso', 'arcilloso'], p=[0.5, 0.4, 0.1]))
         data['humedad'].append(np.round(np.random.uniform(50, 70), 2))
         data['temperatura'].append(np.round(np.random.uniform(20, 30)))
