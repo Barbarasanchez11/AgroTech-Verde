@@ -94,3 +94,11 @@ with open("modelo_rf.pkl", "wb") as f:
     pickle.dump(rf_pipeline, f)
 with open("label_encoder.pkl", "wb") as f:
     pickle.dump(label_encoder, f)
+    
+def entrenar_y_guardar_modelo(csv_path):
+    df = pd.read_csv(csv_path)
+
+    label_encoder = LabelEncoder()
+    df["cultivo_cod"] = label_encoder.fit_transform(df["tipo_de_cultivo"])
+    X = df.drop(columns=["tipo_de_cultivo", "cultivo_cod"])
+    y = df["cultivo_cod"]    
