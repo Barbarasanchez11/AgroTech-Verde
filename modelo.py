@@ -9,12 +9,23 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 import pickle
+import streamlit as st
 import numpy as np
+from firebase_utils import init_firebase
 
 
 df=pd.read_csv('agrotech_data.csv')
 pd.set_option('display.float_format', '{:.2f}'.format)
 
+# Cargar datos nuevos desde Firebase
+from firebase_utils import init_firebase
+db = init_firebase()
+docs = db.collection("cultivos").stream()
+datos = [doc.to_dict() for doc in docs]
+df_nuevos = pd.DataFrame(datos)
+
+# Unir datasets
+df = pd.concat([df_original, df_nuevos], ignore_index=True)
 
 
 print(df.head())

@@ -1,7 +1,7 @@
-import streamlit as st
 import pandas as pd
 import pickle
-from firebase_utils import init_firebase
+import streamlit as st
+from firebase_utils import init_firebase, guardar_datos_cultivo
 
 # Inicializar Firebase
 db = init_firebase()
@@ -43,6 +43,12 @@ if st.button("🌾 Predecir Cultivo"):
     cultivo = label_encoder.inverse_transform(pred)[0]
     st.success(f"El modelo recomienda cultivar: **{cultivo}**")
 
+    datos_cultivo = input_data.iloc[0].to_dict()
+    datos_cultivo["tipo_de_cultivo"] = cultivo
+
+    guardar_datos_cultivo(datos_cultivo)
+    st.success("¡Datos guardados exitosamente en Firebase!")
+
 st.markdown("---")
 st.subheader("📥 Añadir Nuevo Registro de Cultivo")
 
@@ -68,5 +74,14 @@ with st.form("formulario_nuevo_cultivo"):
             "tipo_de_suelo": tipo_de_suelo_nuevo,
             "temporada": temporada_nuevo
         }
-        db.collection("cultivos").add(nuevo_registro)
+        guardar_datos_cultivo(nuevo_registro)
         st.success("✅ Registro guardado correctamente.")
+
+# Mostrar datos existentes de Firebase
+docs = db.collection("cultivos").stream()
+datos = [doc.to_dict() for doc in docs]
+df = pd.DataFrame(datos)
+
+if not df.empty:
+    st.subheader("📊 Datos de cultivos ingresados por usuarios")
+    st.dataframe(df)
