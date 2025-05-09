@@ -14,7 +14,7 @@ st.title("🌱 Clasificador de Cultivos")
 st.write("Introduce las condiciones del terreno para predecir el tipo de cultivo adecuado.")
 
 # Entradas del usuario
-ph = st.slider("pH del suelo", 5.8, 6.8, 6.3)
+ph = st.slider("pH del suelo", 4.5, 8.5, 6.5)
 humedad = st.slider("Humedad (%)", 0, 100, 50)
 temperatura = st.slider("Temperatura (°C)", 0, 40, 20)
 precipitacion = st.slider("Precipitación (mm)", 0, 300, 150)
