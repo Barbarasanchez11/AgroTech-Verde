@@ -4,7 +4,6 @@ import numpy as np
 np.random.seed(42)
 n = 1000
 
-# Inicializar datos
 data = {
     'tipo_de_cultivo': [],
     'ph': [],
@@ -16,10 +15,8 @@ data = {
     'temporada': []
 }
 
-# Cultivos
 cultivos = ['maiz', 'trigo', 'arroz', 'soja', 'naranjas', 'uva', 'lentejas', 'zanahoria']
 
-# Generar datos con relaciones agrícolas
 for _ in range(n):
     cultivo = np.random.choice(cultivos)
     
@@ -35,13 +32,13 @@ for _ in range(n):
     
     elif cultivo == 'trigo':
         data['tipo_de_cultivo'].append(cultivo)
-        data['ph'].append(np.round(np.random.uniform(6.2, 7.0), 2))
-        data['tipo_de_suelo'].append(np.random.choice(['limoso', 'arcilloso', 'arenoso'], p=[0.6, 0.3, 0.1]))
+        data['ph'].append(np.round(np.random.uniform(6.4, 7.3), 2))  # Más neutro
+        data['tipo_de_suelo'].append(np.random.choice(['arcilloso', 'limoso', 'arenoso'], p=[0.6, 0.3, 0.1]))  # Más arcilloso
         data['humedad'].append(np.round(np.random.uniform(40, 60), 2))
-        data['temperatura'].append(np.round(np.random.uniform(15, 25)))
-        data['precipitacion'].append(np.round(np.random.uniform(80, 150), 2))
+        data['temperatura'].append(np.round(np.random.uniform(12, 22)))  # Más fresco
+        data['precipitacion'].append(np.round(np.random.uniform(110, 190), 2))  # Más lluvia
         data['horas_de_sol'].append(np.round(np.random.uniform(6, 10), 1))
-        data['temporada'].append(np.random.choice(['otoño', 'invierno'], p=[0.6, 0.4]))
+        data['temporada'].append(np.random.choice(['otoño', 'invierno'], p=[0.9, 0.1]))  # Casi solo otoño
     
     elif cultivo == 'arroz':
         data['tipo_de_cultivo'].append(cultivo)
@@ -55,13 +52,13 @@ for _ in range(n):
     
     elif cultivo == 'soja':
         data['tipo_de_cultivo'].append(cultivo)
-        data['ph'].append(np.round(np.random.uniform(6.0, 6.8), 2))
-        data['tipo_de_suelo'].append(np.random.choice(['limoso', 'arcilloso', 'arenoso'], p=[0.5, 0.4, 0.1]))
+        data['ph'].append(np.round(np.random.uniform(6.2, 7.0), 2))
+        data['tipo_de_suelo'].append(np.random.choice(['limoso', 'arcilloso', 'arenoso'], p=[0.6, 0.3, 0.1]))
         data['humedad'].append(np.round(np.random.uniform(50, 70), 2))
-        data['temperatura'].append(np.round(np.random.uniform(18, 28)))
-        data['precipitacion'].append(np.round(np.random.uniform(80, 180), 2))
+        data['temperatura'].append(np.round(np.random.uniform(20, 28)))
+        data['precipitacion'].append(np.round(np.random.uniform(90, 170), 2))
         data['horas_de_sol'].append(np.round(np.random.uniform(8, 12), 1))
-        data['temporada'].append(np.random.choice(['primavera', 'verano'], p=[0.4, 0.6]))
+        data['temporada'].append(np.random.choice(['primavera', 'verano'], p=[0.7, 0.3]))
     
     elif cultivo == 'naranjas':
         data['tipo_de_cultivo'].append(cultivo)
@@ -86,12 +83,12 @@ for _ in range(n):
     elif cultivo == 'lentejas':
         data['tipo_de_cultivo'].append(cultivo)
         data['ph'].append(np.round(np.random.uniform(6.0, 7.0), 2))
-        data['tipo_de_suelo'].append(np.random.choice(['limoso', 'arcilloso', 'arenoso'], p=[0.6, 0.3, 0.1]))
+        data['tipo_de_suelo'].append(np.random.choice(['limoso', 'arcilloso', 'arenoso'], p=[0.7, 0.2, 0.1]))
         data['humedad'].append(np.round(np.random.uniform(40, 60), 2))
-        data['temperatura'].append(np.round(np.random.uniform(15, 25)))
+        data['temperatura'].append(np.round(np.random.uniform(13, 23)))
         data['precipitacion'].append(np.round(np.random.uniform(80, 150), 2))
         data['horas_de_sol'].append(np.round(np.random.uniform(6, 10), 1))
-        data['temporada'].append(np.random.choice(['otoño', 'invierno'], p=[0.6, 0.4]))
+        data['temporada'].append(np.random.choice(['otoño', 'invierno'], p=[0.3, 0.7]))
     
     elif cultivo == 'zanahoria':
         data['tipo_de_cultivo'].append(cultivo)
@@ -103,10 +100,7 @@ for _ in range(n):
         data['horas_de_sol'].append(np.round(np.random.uniform(6, 10), 1))
         data['temporada'].append(np.random.choice(['otoño', 'invierno', 'primavera'], p=[0.4, 0.3, 0.3]))
 
-# Crear DataFrame
 df = pd.DataFrame(data)
-
-# Guardar CSV
-df.to_csv('agroTech_data.csv', index=False)
-print("Dataset generado: agroTech_data.csv")
+df.to_csv('agrotech_data.csv', index=False)
+print("Dataset generado: agrotech_data.csv")
 print(df.head())
