@@ -9,6 +9,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 import pickle
+import numpy as np
 
 
 df=pd.read_csv('agrotech_data.csv')
@@ -45,7 +46,7 @@ print(X_train, X_test, y_train, y_test)
 
 # 5. Identificar columnas numéricas y categóricas
 num_cols = ["ph", "humedad", "temperatura", "precipitacion", "horas_de_sol"]
-cat_cols = ["tipo_de_suelo"]
+cat_cols = ["tipo_de_suelo", "temporada"]
 
 print(num_cols)
 print(cat_cols)
@@ -89,8 +90,40 @@ plt.title("Matriz de confusión - SVM")
 plt.xticks(rotation=45)
 plt.show()
 
+# Matriz de confusión
+conf_matrix = np.array([
+    [2, 4, 1, 3, 5, 2, 2, 2],
+    [1, 4, 3, 1, 5, 3, 1, 1],
+    [1, 3, 9, 3, 4, 1, 1, 4],
+    [2, 0, 4, 6,10, 1, 2, 1],
+    [4, 2, 3, 3, 6, 2, 2, 3],
+    [3, 2, 3, 1,10, 2, 1, 3],
+    [2, 6, 6, 2, 5, 1, 2, 2],
+    [3, 6, 2, 1, 4, 5, 4, 4],
+])
+
+labels = ['arroz', 'lentejas', 'maiz', 'naranjas', 'soja', 'trigo', 'uva', 'zanahoria']
+
+# Resultados
+for i, label in enumerate(labels):
+    TP = conf_matrix[i, i]
+    FP = sum(conf_matrix[:, i]) - TP
+    FN = sum(conf_matrix[i, :]) - TP
+
+    precision = TP / (TP + FP) if (TP + FP) > 0 else 0
+    recall = TP / (TP + FN) if (TP + FN) > 0 else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+
+    print(f"{label.upper()}:")
+    print(f"  Precisión: {precision:.2f}")
+    print(f"  Recall:    {recall:.2f}")
+    print(f"  F1-score:  {f1:.2f}")
+    print()
+
 with open("modelo_rf.pkl", "wb") as f:
     pickle.dump(rf_pipeline, f)
 
 with open("label_encoder.pkl", "wb") as f:
     pickle.dump(label_encoder, f)
+
+
