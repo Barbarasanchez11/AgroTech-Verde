@@ -64,18 +64,21 @@ with st.form("formulario_nuevo_cultivo"):
     submit = st.form_submit_button("Guardar")
 
     if submit:
-        nuevo_registro = {
-            "tipo_de_cultivo": nuevo_cultivo,
-            "ph": ph_nuevo,
-            "humedad": humedad_nuevo,
-            "temperatura": temperatura_nuevo,
-            "precipitacion": precipitacion_nuevo,
-            "horas_de_sol": horas_de_sol_nuevo,
-            "tipo_de_suelo": tipo_de_suelo_nuevo,
-            "temporada": temporada_nuevo
-        }
-        guardar_datos_cultivo(nuevo_registro)
-        st.success("✅ Registro guardado correctamente.")
+        if nuevo_cultivo.strip() == "":
+            st.error("⚠️ Por favor, introduce el nombre del cultivo antes de guardar.")
+        else:
+            nuevo_registro = {
+                "tipo_de_cultivo": nuevo_cultivo,
+                "ph": ph_nuevo,
+                "humedad": humedad_nuevo,
+                "temperatura": temperatura_nuevo,
+                "precipitacion": precipitacion_nuevo,
+                "horas_de_sol": horas_de_sol_nuevo,
+                "tipo_de_suelo": tipo_de_suelo_nuevo,
+                "temporada": temporada_nuevo
+            }
+            guardar_datos_cultivo(nuevo_registro)
+            st.success("✅ Registro guardado correctamente.")
 
 # Mostrar datos existentes de Firebase
 docs = db.collection("cultivos").stream()
