@@ -21,7 +21,7 @@ df_combined = pd.concat([df_original, df_firebase], ignore_index=True)
 df_combined.to_csv("agrotech_data_actualizada.csv", index=False)
 
 # Reentrenar
-from modelo import entrenar_y_guardar_modelo  # Necesitas esta función en modelo.py
+from modelo import entrenar_y_guardar_modelo 
 
 entrenar_y_guardar_modelo("agrotech_data_actualizada.csv")
 print("✅ Modelo reentrenado con nuevos datos")
