@@ -120,10 +120,10 @@ for i, label in enumerate(labels):
     print(f"  F1-score:  {f1:.2f}")
     print()
 
-with open("modelo_rf.pkl", "wb") as f:
-    pickle.dump(rf_pipeline, f)
+#with open("modelo_rf.pkl", "wb") as f:
+ #   pickle.dump(rf_pipeline, f)
 
-with open("label_encoder.pkl", "wb") as f:
-    pickle.dump(label_encoder, f)
+#with open("label_encoder.pkl", "wb") as f:
+ #   pickle.dump(label_encoder, f)
 
 
