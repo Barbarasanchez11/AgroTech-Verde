@@ -13,9 +13,8 @@ import streamlit as st
 import numpy as np
 from firebase_utils import init_firebase
 
-# ========================
+
 # 1. Cargar y unir datos
-# ========================
 
 df_original = pd.read_csv('agrotech_data.csv')
 pd.set_option('display.float_format', '{:.2f}'.format)
