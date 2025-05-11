@@ -6,6 +6,8 @@ from firebase_utils import init_firebase, guardar_datos_cultivo
 # Inicializar Firebase
 db = init_firebase()
 
+
+
 # Cargar modelo y codificador
 with open("modelo_rf.pkl", "rb") as f:
     model = pickle.load(f)
@@ -88,3 +90,7 @@ df = pd.DataFrame(datos)
 if not df.empty:
     st.subheader("📊 Datos de cultivos ingresados por usuarios")
     st.dataframe(df)
+
+
+
+
