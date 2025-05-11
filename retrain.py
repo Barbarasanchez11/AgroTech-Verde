@@ -1,7 +1,7 @@
 import pandas as pd
 import firebase_admin
 from firebase_admin import credentials, firestore
-from modelo import label_encoder, rf_pipeline  # Asegúrate que modelo.py exporte esto correctamente
+from modelo import label_encoder, rf_pipeline  
 import pickle
 
 # Inicializar Firebase
