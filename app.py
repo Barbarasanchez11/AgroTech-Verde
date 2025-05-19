@@ -99,4 +99,25 @@ if not df.empty:
         use_container_width=True
     )
 
+# Script para gradiente dinámico en sliders
+st.markdown('''
+<script>
+function updateSliders() {
+  document.querySelectorAll('div[data-baseweb="slider"]').forEach(function(slider) {
+    let rails = slider.querySelectorAll('.st-c2 > div');
+    let thumb = slider.querySelector('[role="slider"]');
+    if (rails.length && thumb) {
+      let rail = rails[0];
+      let min = parseFloat(slider.querySelector('[data-testid="stTickBarMin"]').textContent.replace(',', '.'));
+      let max = parseFloat(slider.querySelector('[data-testid="stTickBarMax"]').textContent.replace(',', '.'));
+      let val = parseFloat(thumb.getAttribute('aria-valuenow').replace(',', '.'));
+      let percent = ((val - min) / (max - min)) * 100;
+      rail.style.background = `linear-gradient(to right, #ff4b4b ${percent}%, #4CAF50 ${percent}%)`;
+    }
+  });
+}
+setInterval(updateSliders, 100);
+</script>
+''', unsafe_allow_html=True)
+
 
