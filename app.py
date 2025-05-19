@@ -21,12 +21,24 @@ st.markdown("""
         border-radius: 5px;
         padding: 10px 20px;
         font-weight: bold;
+        border: none;
+    }
+    .stButton>button:hover {
+        background-color: #388E3C;
+        color: white;
+        border: none;
+    }
+    .css-1d391kg {
+        padding: 2rem 1rem;
     }
     .stSlider>div>div>div {
         background-color: #4CAF50;
     }
-    .css-1d391kg {
-        padding: 2rem 1rem;
+    .stSlider>div>div>div>div {
+        background-color: #ff4b4b;
+    }
+    .success-text {
+        font-size: 1.2rem;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -52,10 +64,8 @@ with col1:
     horas_de_sol = st.slider("Horas de sol", 0, 16, 8)
     tipo_de_suelo = st.selectbox("Tipo de suelo", ["arcilloso", "arenoso", "limoso", "rocoso"])
     temporada = st.selectbox("Temporada", ['verano', 'otoño', 'invierno', 'primavera'])
-
-with col2:
-    st.markdown("#### 📈 Resultado de la Predicción")
-    if st.button("🌾 Predecir Cultivo", use_container_width=True):
+    
+    if st.button("Predecir Cultivo", use_container_width=True):
         with open("modelo_rf.pkl", "rb") as f:
             model = pickle.load(f)
         with open("label_encoder.pkl", "rb") as f:
@@ -74,11 +84,14 @@ with col2:
         pred = model.predict(input_data)
         cultivo = label_encoder.inverse_transform(pred)[0]
         
-        st.success(f"### 🌿 Cultivo Recomendado: {cultivo}")
+        st.markdown(f'<div class="success-text">🌿 Cultivo Recomendado: {cultivo}</div>', unsafe_allow_html=True)
         
         datos_cultivo = input_data.iloc[0].to_dict()
         datos_cultivo["tipo_de_cultivo"] = cultivo
         guardar_datos_cultivo(datos_cultivo)
+
+with col2:
+    pass
 
 st.markdown("---")
 
@@ -123,7 +136,7 @@ df = pd.DataFrame(datos)
 if not df.empty:
     st.markdown("### 📊 Historial de Cultivos")
     st.dataframe(
-        df.style.background_gradient(cmap='Greens'),
+        df,
         use_container_width=True
     )
 
