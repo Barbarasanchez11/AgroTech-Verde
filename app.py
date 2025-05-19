@@ -79,7 +79,7 @@ with st.expander("➕ Añadir Nuevo Registro de Cultivo", expanded=False):
             tipo_de_suelo_nuevo = st.selectbox("Tipo de suelo", ["arcilloso", "arenoso", "limoso", "rocoso"], key="tipo_de_suelo_nuevo")
             temporada_nuevo = st.selectbox("Temporada", ['verano', 'otoño', 'invierno', 'primavera'], key="temporada_nuevo")
         
-        submit = st.form_submit_button("💾 Guardar Registro", use_container_width=True)
+        submit = st.form_submit_button("Guardar Registro", use_container_width=True)
         
         if submit:
             if nuevo_cultivo.strip() == "":
@@ -106,7 +106,7 @@ df = pd.DataFrame(datos)
 if not df.empty:
     st.markdown("### 📊 Historial de Cultivos")
     st.dataframe(
-        df,
+        df.style.background_gradient(cmap='Greens'),
         use_container_width=True
     )
 
