@@ -3,7 +3,7 @@
     background-color: #f0f2f6;
 }
 
-/* Botón principal */
+/* Botón principal y de guardar registro */
 .stButton>button {
     background-color: #4CAF50;
     color: white;
@@ -18,9 +18,9 @@
     border: none;
 }
 
-/* Slider: barra verde y valor rojo */
+/* Slider: mitad izquierda roja, mitad derecha verde */
 div[data-baseweb="slider"] .st-c2 {
-    background-color: #4CAF50 !important;
+    background: linear-gradient(to right, #ff4b4b 50%, #4CAF50 50%) !important;
 }
 div[data-baseweb="slider"] .st-c3 {
     background-color: #ff4b4b !important;
