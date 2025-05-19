@@ -10,38 +10,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.markdown("""
-    <style>
-    .main {
-        background-color: #f0f2f6;
-    }
-    .stButton>button {
-        background-color: #4CAF50;
-        color: white;
-        border-radius: 5px;
-        padding: 10px 20px;
-        font-weight: bold;
-        border: none;
-    }
-    .stButton>button:hover {
-        background-color: #388E3C;
-        color: white;
-        border: none;
-    }
-    .css-1d391kg {
-        padding: 2rem 1rem;
-    }
-    .stSlider>div>div>div {
-        background-color: #4CAF50;
-    }
-    .stSlider>div>div>div>div {
-        background-color: #ff4b4b;
-    }
-    .success-text {
-        font-size: 1.2rem;
-    }
-    </style>
-""", unsafe_allow_html=True)
+with open("style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 with st.sidebar:
     st.image("https://img.icons8.com/color/96/000000/plant-under-rain.png", width=100)
