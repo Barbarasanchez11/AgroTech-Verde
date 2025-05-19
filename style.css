@@ -3,27 +3,54 @@
     background-color: #f0f2f6;
 }
 
+.param-section {
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin-bottom: 0.5rem;
+}
+
 /* Botón principal y de guardar registro */
 .stButton>button {
     background-color: #4CAF50;
     color: white;
     border-radius: 5px;
-    padding: 10px 20px;
+    padding: 10px 32px;
     font-weight: bold;
     border: none;
+    min-width: 180px;
+    max-width: 220px;
+    width: 220px;
+    margin-left: 0;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    display: block;
+    transition: background 0.2s;
 }
-.stButton>button:hover {
+.stButton>button:hover, .stButton>button:active {
     background-color: #388E3C;
     color: white;
     border: none;
+    position: static;
 }
 
-/* Slider: mitad izquierda roja, mitad derecha verde */
+/* Slider: barra roja hasta el valor seleccionado, verde desde ahí hasta el final */
 div[data-baseweb="slider"] .st-c2 {
-    background: linear-gradient(to right, #ff4b4b 50%, #4CAF50 50%) !important;
+    background: #e0e0e0 !important;
+    position: relative;
 }
 div[data-baseweb="slider"] .st-c3 {
     background-color: #ff4b4b !important;
+}
+/* Gradiente dinámico para la barra del slider */
+div[data-baseweb="slider"] .st-c2 > div:first-child {
+    height: 4px;
+    border-radius: 2px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    background: linear-gradient(to right, #ff4b4b var(--slider-value, 50%), #4CAF50 var(--slider-value, 50%)) !important;
 }
 
 /* Quitar fondo verde de los labels de los extremos del slider y poner texto negro */
