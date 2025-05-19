@@ -1,0 +1,46 @@
+/* Fondo general */
+.main {
+    background-color: #f0f2f6;
+}
+
+/* Botón principal */
+.stButton>button {
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-weight: bold;
+    border: none;
+}
+.stButton>button:hover {
+    background-color: #388E3C;
+    color: white;
+    border: none;
+}
+
+/* Slider: barra verde y valor rojo */
+div[data-baseweb="slider"] .st-c2 {
+    background-color: #4CAF50 !important;
+}
+div[data-baseweb="slider"] .st-c3 {
+    background-color: #ff4b4b !important;
+}
+
+/* Quitar fondo verde de los labels de los extremos del slider y poner texto negro */
+div[data-baseweb="slider"] [class^="css-"][data-testid="stTickBarMin"] {
+    background: transparent !important;
+    color: #222 !important;
+    border-radius: 0 !important;
+    font-weight: 600;
+}
+div[data-baseweb="slider"] [class^="css-"][data-testid="stTickBarMax"] {
+    background: transparent !important;
+    color: #222 !important;
+    border-radius: 0 !important;
+    font-weight: 600;
+}
+
+/* Resultado de predicción más pequeño */
+.success-text {
+    font-size: 1.2rem;
+} 
