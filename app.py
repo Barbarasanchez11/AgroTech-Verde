@@ -41,10 +41,19 @@ temporada = st.selectbox("Temporada", ['verano', 'otoño', 'invierno', 'primaver
 st.markdown('</div>', unsafe_allow_html=True)
 
 if st.button("Predecir Cultivo", key="btn-predict"):
-    with open("modelo_rf.pkl", "rb") as f:
-        model = pickle.load(f)
-    with open("label_encoder.pkl", "rb") as f:
-        label_encoder = pickle.load(f)
+    try:
+        with open("modelo_rf.pkl", "rb") as f:
+            model = pickle.load(f)
+        with open("label_encoder.pkl", "rb") as f:
+            label_encoder = pickle.load(f)
+    except FileNotFoundError:
+        st.error("❌ El modelo no se encontró. Asegúrate de subir `modelo_rf.pkl` y `label_encoder.pkl` al repositorio.")
+        st.stop()
+    except Exception as e:
+        st.error(f"❌ Error al cargar el modelo: {e}")
+        st.stop()
+
+   
     input_data = pd.DataFrame([{
         "ph": ph,
         "humedad": humedad,

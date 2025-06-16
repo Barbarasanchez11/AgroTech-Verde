@@ -1,27 +1,44 @@
 import pandas as pd
-import firebase_admin
-from firebase_admin import credentials, firestore
-from modelo import label_encoder, rf_pipeline  
 import pickle
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
 
-# Inicializar Firebase
-if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase_config.json")
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
+# Cargar datos
+df = pd.read_csv("agrotech_data.csv")
 
-# Leer Firestore
-docs = db.collection("cultivos").stream()
-firebase_data = [doc.to_dict() for doc in docs]
-df_firebase = pd.DataFrame(firebase_data)
+# Codificar objetivo
+label_encoder = LabelEncoder()
+df["cultivo_cod"] = label_encoder.fit_transform(df["tipo_de_cultivo"])
+X = df.drop(columns=["tipo_de_cultivo", "cultivo_cod"])
+y = df["cultivo_cod"]
 
-# Combinar con datos existentes
-df_original = pd.read_csv("agrotech_data.csv")
-df_combined = pd.concat([df_original, df_firebase], ignore_index=True)
-df_combined.to_csv("agrotech_data_actualizada.csv", index=False)
+# Columnas
+num_cols = ["ph", "humedad", "temperatura", "precipitacion", "horas_de_sol"]
+cat_cols = ["tipo_de_suelo", "temporada"]
 
-# Reentrenar
-from modelo import entrenar_y_guardar_modelo 
+# Preprocesador
+preprocessor = ColumnTransformer([
+    ("num", StandardScaler(), num_cols),
+    ("cat", OneHotEncoder(), cat_cols)
+])
 
-entrenar_y_guardar_modelo("agrotech_data_actualizada.csv")
-print("✅ Modelo reentrenado con nuevos datos")
+# Pipeline
+pipeline = Pipeline([
+    ("preprocessor", preprocessor),
+    ("classifier", RandomForestClassifier(random_state=42))
+])
+
+# Entrenar
+pipeline.fit(X, y)
+
+# Guardar modelo y label encoder
+with open("modelo_rf.pkl", "wb") as f:
+    pickle.dump(pipeline, f)
+
+with open("label_encoder.pkl", "wb") as f:
+    pickle.dump(label_encoder, f)
+
+print("✅ Modelos guardados correctamente.")
