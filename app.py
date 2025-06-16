@@ -2,6 +2,12 @@ import pandas as pd
 import pickle
 import streamlit as st
 from firebase_utils import init_firebase, guardar_datos_cultivo
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.preprocessing import LabelEncoder
 
 st.set_page_config(
     page_title="AgroTech Verde",
