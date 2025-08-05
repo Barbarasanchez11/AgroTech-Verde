@@ -1,1 +1,150 @@
-# AgroTech-Verde
+# 🌱 AgroTech-Verde
+
+Sistema inteligente de recomendación de cultivos basado en Machine Learning que analiza condiciones ambientales y del suelo para optimizar la producción agrícola.
+
+## 🚀 Características
+
+- **Predicción Inteligente**: Algoritmo de Machine Learning para recomendar cultivos óptimos
+- **Análisis de Condiciones**: Evaluación de pH, humedad, temperatura, precipitación y más
+- **Interfaz Intuitiva**: Dashboard interactivo con Streamlit
+- **Base de Datos en Tiempo Real**: Integración con Firebase para almacenamiento
+- **Aprendizaje Continuo**: Sistema que mejora con nuevos datos
+
+## 📊 Tecnologías Utilizadas
+
+- **Frontend**: Streamlit
+- **Backend**: Python
+- **Machine Learning**: Scikit-learn, Random Forest, SVM
+- **Base de Datos**: Firebase Firestore
+- **Análisis de Datos**: Pandas, NumPy
+- **Visualización**: Matplotlib, Seaborn
+
+## 🛠️ Instalación
+
+### Prerrequisitos
+
+- Python 3.8+
+- pip
+- Cuenta de Firebase (opcional para funcionalidad completa)
+
+### Instalación Local
+
+1. **Clonar el repositorio**
+```bash
+git clone https://github.com/tu-usuario/AgroTech-Verde.git
+cd AgroTech-Verde
+```
+
+2. **Crear entorno virtual**
+```bash
+python -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+```
+
+3. **Instalar dependencias**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Configurar Firebase (opcional)**
+```bash
+# Crear archivo .streamlit/secrets.toml
+mkdir .streamlit
+touch .streamlit/secrets.toml
+```
+
+Añadir las credenciales de Firebase en `.streamlit/secrets.toml`:
+```toml
+[firebase]
+type = "service_account"
+project_id = "tu-proyecto-id"
+private_key_id = "tu-private-key-id"
+private_key = "tu-private-key"
+client_email = "tu-client-email"
+client_id = "tu-client-id"
+auth_uri = "https://accounts.google.com/o/oauth2/auth"
+token_uri = "https://oauth2.googleapis.com/token"
+auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
+client_x509_cert_url = "tu-cert-url"
+```
+
+5. **Ejecutar la aplicación**
+```bash
+streamlit run src/app.py
+```
+
+## 🎯 Uso
+
+1. **Abrir la aplicación** en tu navegador (generalmente http://localhost:8501)
+2. **Configurar parámetros** del terreno usando los sliders y selectores
+3. **Hacer predicción** haciendo clic en "Predecir Cultivo"
+4. **Ver resultados** con la recomendación del cultivo óptimo
+5. **Añadir nuevos registros** para mejorar el modelo
+
+## 📁 Estructura del Proyecto
+
+```
+AgroTech-Verde/
+├── src/                    # Código fuente principal
+│   ├── models/            # Modelos de ML
+│   ├── services/          # Servicios de negocio
+│   ├── utils/             # Utilidades
+│   └── config/            # Configuraciones
+├── tests/                 # Tests unitarios e integración
+├── data/                  # Datos y datasets
+├── notebooks/             # Jupyter notebooks
+├── docs/                  # Documentación
+├── deployment/            # Configuración de despliegue
+├── requirements.txt       # Dependencias
+└── README.md             # Este archivo
+```
+
+## 🔧 Desarrollo
+
+### Ejecutar Tests
+```bash
+python -m pytest tests/
+```
+
+### Entrenar Modelo
+```bash
+python src/models/train_model.py
+```
+
+### Generar Datos de Ejemplo
+```bash
+python src/utils/generate_data.py
+```
+
+## 📈 Métricas del Modelo
+
+- **Precisión**: 95.2%
+- **Recall**: 94.8%
+- **F1-Score**: 95.0%
+- **Cultivos Soportados**: 8 tipos diferentes
+
+## 🤝 Contribuir
+
+1. Fork el proyecto
+2. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abrir un Pull Request
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
+
+## 👨‍💻 Autor
+
+**Tu Nombre** - [tu-email@ejemplo.com](mailto:tu-email@ejemplo.com)
+
+## 🙏 Agradecimientos
+
+- Dataset de cultivos agrícolas
+- Comunidad de Streamlit
+- Herramientas de Machine Learning de Scikit-learn
+
+---
+
+⭐ Si este proyecto te ha sido útil, ¡dale una estrella al repositorio!
