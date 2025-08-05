@@ -1,17 +1,12 @@
-"""
-Configuración centralizada para AgroTech-Verde
-"""
 import os
 from pathlib import Path
 from typing import Dict, Any
 
-# Rutas del proyecto
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 MODELS_DIR = PROJECT_ROOT / "src" / "models"
 STYLE_FILE = PROJECT_ROOT / "src" / "style.css"
 
-# Configuración de la aplicación
 APP_CONFIG = {
     "page_title": "AgroTech Verde",
     "page_icon": "🌱",
@@ -19,7 +14,6 @@ APP_CONFIG = {
     "initial_sidebar_state": "expanded"
 }
 
-# Configuración de parámetros del terreno
 TERRAIN_PARAMS = {
     "ph": {"min": 4.5, "max": 8.5, "default": 6.5, "step": 0.1},
     "humedad": {"min": 0, "max": 100, "default": 50, "step": 1},
@@ -28,11 +22,9 @@ TERRAIN_PARAMS = {
     "horas_de_sol": {"min": 0, "max": 16, "default": 8, "step": 0.5}
 }
 
-# Opciones de selección
 SOIL_TYPES = ["arcilloso", "arenoso", "limoso", "rocoso"]
 SEASONS = ['verano', 'otoño', 'invierno', 'primavera']
 
-# Configuración de ML
 ML_CONFIG = {
     "test_size": 0.2,
     "random_state": 42,
@@ -42,13 +34,11 @@ ML_CONFIG = {
     }
 }
 
-# Configuración de Firebase
 FIREBASE_CONFIG = {
     "collection_name": "cultivos",
     "credentials_key": "firebase"
 }
 
-# Configuración de validación
 VALIDATION_CONFIG = {
     "min_crop_name_length": 2,
     "max_crop_name_length": 50,
@@ -57,26 +47,23 @@ VALIDATION_CONFIG = {
 }
 
 def get_model_path(model_name: str) -> Path:
-    """Obtiene la ruta completa del modelo especificado"""
     return MODELS_DIR / ML_CONFIG["model_files"].get(model_name, f"{model_name}.pkl")
 
 def get_data_path(filename: str) -> Path:
-    """Obtiene la ruta completa del archivo de datos"""
     return DATA_DIR / filename
 
 def validate_environment() -> bool:
-    """Valida que el entorno esté correctamente configurado"""
     required_dirs = [DATA_DIR, MODELS_DIR]
     required_files = [STYLE_FILE]
     
     for dir_path in required_dirs:
         if not dir_path.exists():
-            print(f"❌ Directorio requerido no encontrado: {dir_path}")
+            print(f"Required directory not found: {dir_path}")
             return False
     
     for file_path in required_files:
         if not file_path.exists():
-            print(f"❌ Archivo requerido no encontrado: {file_path}")
+            print(f"Required file not found: {file_path}")
             return False
     
     return True 
