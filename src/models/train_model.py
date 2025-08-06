@@ -1,6 +1,3 @@
-"""
-Script de entrenamiento mejorado para AgroTech-Verde
-"""
 import pandas as pd
 import numpy as np
 import pickle

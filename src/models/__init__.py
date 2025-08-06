@@ -1,3 +1,3 @@
 """
-Modelos de Machine Learning para AgroTech-Verde
+Machine Learning models for AgroTech-Verde
 """ 
