@@ -7,9 +7,11 @@
     margin-bottom: 0.5rem;
 }
 
-/* Botón principal y de guardar registro */
-.stButton>button,
-button[data-testid="baseButton-secondary"],.stFormSubmitButton>button {
+/* Todos los botones con color verde */
+.stButton > button,
+button[data-testid="baseButton-secondary"],
+.stFormSubmitButton > button,
+button[data-testid="baseButton-secondary"][data-baseweb="button"] {
     background-color: #4CAF50;
     color: white;
     border-radius: 5px;
@@ -25,11 +27,81 @@ button[data-testid="baseButton-secondary"],.stFormSubmitButton>button {
     display: block;
     transition: background 0.2s;
 }
-.stButton>button:hover, .stButton>button:active,
+
+.stButton > button:hover, 
+.stButton > button:active,
 button[data-testid="baseButton-secondary"]:hover, 
 button[data-testid="baseButton-secondary"]:active,
-.stFormSubmitButton>button:hover, 
-.stFormSubmitButton>button:active {
+.stFormSubmitButton > button:hover, 
+.stFormSubmitButton > button:active,
+button[data-testid="baseButton-secondary"][data-baseweb="button"]:hover,
+button[data-testid="baseButton-secondary"][data-baseweb="button"]:active {
+    background-color: #388E3C;
+    color: white;
+    border: none;
+    position: static;
+}
+
+/* Botones de administración más compactos */
+button[data-testid="baseButton-secondary"][data-baseweb="button"] {
+    padding: 8px 20px;
+    min-width: 160px;
+    max-width: 180px;
+    width: 180px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+/* Selectores específicos para botones de administración */
+button[data-testid="baseButton-secondary"] {
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    padding: 8px 20px;
+    font-weight: bold;
+    border: none;
+    min-width: 160px;
+    max-width: 180px;
+    width: 180px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    display: block;
+    transition: background 0.2s;
+}
+
+button[data-testid="baseButton-secondary"]:hover,
+button[data-testid="baseButton-secondary"]:active {
+    background-color: #388E3C;
+    color: white;
+    border: none;
+    position: static;
+}
+
+/* Selector adicional para todos los botones de Streamlit */
+div[data-testid="stButton"] > button,
+div[data-testid="stButton"] button {
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    padding: 10px 32px;
+    font-weight: bold;
+    border: none;
+    min-width: 180px;
+    max-width: 220px;
+    width: 220px;
+    margin-left: 0;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    display: block;
+    transition: background 0.2s;
+}
+
+div[data-testid="stButton"] > button:hover,
+div[data-testid="stButton"] > button:active,
+div[data-testid="stButton"] button:hover,
+div[data-testid="stButton"] button:active {
     background-color: #388E3C;
     color: white;
     border: none;

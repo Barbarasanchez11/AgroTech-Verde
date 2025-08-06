@@ -19,7 +19,7 @@ TERRAIN_PARAMS = {
     "humedad": {"min": 0, "max": 100, "default": 50, "step": 1},
     "temperatura": {"min": 0, "max": 40, "default": 20, "step": 1},
     "precipitacion": {"min": 0, "max": 300, "default": 150, "step": 5},
-    "horas_de_sol": {"min": 0, "max": 16, "default": 8, "step": 0.5}
+    "horas_de_sol": {"min": 0.0, "max": 16.0, "default": 8.0, "step": 0.5}
 }
 
 SOIL_TYPES = ["arcilloso", "arenoso", "limoso", "rocoso"]

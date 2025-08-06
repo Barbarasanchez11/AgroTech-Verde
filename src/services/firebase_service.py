@@ -114,9 +114,94 @@ class FirebaseService:
     
     @require_initialization
     def get_all_crops(self) -> List[Dict[str, Any]]:
-        crops_data = self.data_access.get_all_documents()
-        logger.info(f"Retrieved {len(crops_data)} crop records")
-        return crops_data
+        try:
+            docs = self.data_access.get_all_documents()
+            crops_data = []
+            
+            for data in docs:
+                if data:
+                    relevant_data = {
+                        "temporada": data.get("temporada"),
+                        "temperatura": data.get("temperatura"),
+                        "ph": data.get("ph"),
+                        "tipo_de_cultivo": data.get("tipo_de_cultivo"),
+                        "horas_de_sol": data.get("horas_de_sol"),
+                        "precipitacion": data.get("precipitacion"),
+                        "tipo_de_suelo": data.get("tipo_de_suelo"),
+                        "humedad": data.get("humedad")
+                    }
+                    crops_data.append(relevant_data)
+            
+            return crops_data
+            
+        except Exception as e:
+            logger.error(f"Error getting all crops: {e}")
+            return []
+
+    @require_initialization
+    def clean_empty_records(self) -> Dict[str, int]:
+        try:
+            doc_refs = self.db.collection(self.data_access.collection_name).stream()
+            deleted_count = 0
+            total_count = 0
+            
+            for doc_ref in doc_refs:
+                total_count += 1
+                data = doc_ref.to_dict()
+                
+                relevant_fields = ["temporada", "temperatura", "ph", "tipo_de_cultivo", 
+                                 "horas_de_sol", "precipitacion", "tipo_de_suelo", "humedad"]
+                
+                has_empty_field = False
+                for field in relevant_fields:
+                    value = data.get(field)
+                    if value is None or value == "" or value == "None":
+                        has_empty_field = True
+                        break
+                
+                if has_empty_field:
+                    self.data_access.delete_document(doc_ref.id)
+                    deleted_count += 1
+                    logger.info(f"Deleted record {doc_ref.id} with empty fields")
+            
+            logger.info(f"Cleanup completed: {deleted_count}/{total_count} records deleted")
+            return {
+                "total_records": total_count,
+                "deleted_records": deleted_count,
+                "remaining_records": total_count - deleted_count
+            }
+            
+        except Exception as e:
+            logger.error(f"Error cleaning empty records: {e}")
+            return {"error": str(e)}
+
+    @require_initialization
+    def get_clean_data_for_training(self) -> List[Dict[str, Any]]:
+        try:
+            docs = self.data_access.get_all_documents()
+            clean_data = []
+            
+            for data in docs:
+                if data:
+                    relevant_fields = ["temporada", "temperatura", "ph", "tipo_de_cultivo", 
+                                     "horas_de_sol", "precipitacion", "tipo_de_suelo", "humedad"]
+                    
+                    has_all_fields = True
+                    for field in relevant_fields:
+                        value = data.get(field)
+                        if value is None or value == "" or value == "None":
+                            has_all_fields = False
+                            break
+                    
+                    if has_all_fields:
+                        clean_data.append(data)
+            
+            logger.info(f"Retrieved {len(clean_data)} clean records for training")
+            return clean_data
+            
+        except Exception as e:
+            logger.error(f"Error getting clean data for training: {e}")
+            return []
     
     @require_initialization
     def get_crops_by_date_range(self, start_date: datetime, end_date: datetime) -> List[Dict[str, Any]]:

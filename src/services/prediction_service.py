@@ -19,8 +19,8 @@ class PredictionService:
 
     def load_models(self) -> bool:
         try:
-            model_path = get_model_path("modelo_rf.pkl")
-            encoder_path = get_model_path("label_encoder.pkl")
+            model_path = get_model_path("random_forest")
+            encoder_path = get_model_path("label_encoder")
             
             if model_path is None or not Path(model_path).exists():
                 logger.error("Model path is invalid or does not exist")
@@ -78,8 +78,8 @@ class PredictionService:
             return {"status": "not_loaded"}
         
         try:
-            model_path = get_model_path("modelo_rf.pkl")
-            encoder_path = get_model_path("label_encoder.pkl")
+            model_path = get_model_path("random_forest")
+            encoder_path = get_model_path("label_encoder")
             
             return {
                 "status": "loaded",

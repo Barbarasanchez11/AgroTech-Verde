@@ -6,6 +6,7 @@ import logging
 from src.config.config import APP_CONFIG, TERRAIN_PARAMS, SOIL_TYPES, SEASONS, STYLE_FILE
 from src.services.prediction_service import PredictionService
 from src.services.firebase_service import FirebaseService
+from src.services.retraining_service import RetrainingService
 from src.utils.validators import DataValidator
 
 logging.basicConfig(level=logging.INFO)
@@ -15,15 +16,16 @@ logger = logging.getLogger(__name__)
 def init_services():
     prediction_service = PredictionService()
     firebase_service = FirebaseService()
-    return prediction_service, firebase_service
+    retraining_service = RetrainingService()
+    prediction_service.load_models()
+    return prediction_service, firebase_service, retraining_service
 
 def load_css():
     try:
         with open(STYLE_FILE, "r") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.error("Style file not found")
-        logger.error(f"Style file not found: {STYLE_FILE}")
+    except Exception as e:
+        st.error(f"Error loading CSS: {e}")
 
 def render_sidebar():
     with st.sidebar:
@@ -33,65 +35,54 @@ def render_sidebar():
         st.markdown("### Clasificador Inteligente de Cultivos")
         st.markdown("Sistema de recomendación de cultivos basado en condiciones ambientales y del suelo.")
         
-        prediction_service, _ = init_services()
+        prediction_service, firebase_service, retraining_service = init_services()
         model_info = prediction_service.get_model_info()
         
-        if model_info.get("loaded"):
-            st.markdown("---")
-            st.markdown("### Información del Modelo")
-            st.markdown(f"**Tipo**: {model_info.get('model_type', 'N/A')}")
-            st.markdown(f"**Cultivos disponibles**: {model_info.get('num_crops', 0)}")
+        if model_info.get("status") == "loaded":
+            available_crops = model_info.get("available_crops", [])
+            st.markdown(f"**Cultivos disponibles:** {len(available_crops)}")
         else:
             st.warning("Modelo no cargado")
 
-def render_terrain_params() -> Dict[str, Any]:
-    st.markdown('<div class="param-section">', unsafe_allow_html=True)
-    st.markdown("#### Parámetros del Terreno")
+def render_terrain_params():
+    st.markdown("### Parámetros del Terreno")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        ph = st.slider(
-            "pH del suelo", 
-            TERRAIN_PARAMS["ph"]["min"], 
-            TERRAIN_PARAMS["ph"]["max"], 
-            TERRAIN_PARAMS["ph"]["default"],
-            TERRAIN_PARAMS["ph"]["step"]
-        )
-        humedad = st.slider(
-            "Humedad (%)", 
-            TERRAIN_PARAMS["humedad"]["min"], 
-            TERRAIN_PARAMS["humedad"]["max"], 
-            TERRAIN_PARAMS["humedad"]["default"],
-            TERRAIN_PARAMS["humedad"]["step"]
-        )
-        temperatura = st.slider(
-            "Temperatura (°C)", 
-            TERRAIN_PARAMS["temperatura"]["min"], 
-            TERRAIN_PARAMS["temperatura"]["max"], 
-            TERRAIN_PARAMS["temperatura"]["default"],
-            TERRAIN_PARAMS["temperatura"]["step"]
-        )
-        precipitacion = st.slider(
-            "Precipitación (mm)", 
-            TERRAIN_PARAMS["precipitacion"]["min"], 
-            TERRAIN_PARAMS["precipitacion"]["max"], 
-            TERRAIN_PARAMS["precipitacion"]["default"],
-            TERRAIN_PARAMS["precipitacion"]["step"]
-        )
+        ph = st.slider("pH del suelo", 
+                      min_value=TERRAIN_PARAMS["ph"]["min"], 
+                      max_value=TERRAIN_PARAMS["ph"]["max"], 
+                      value=TERRAIN_PARAMS["ph"]["default"], 
+                      step=TERRAIN_PARAMS["ph"]["step"])
+        
+        humedad = st.slider("Humedad (%)", 
+                           min_value=TERRAIN_PARAMS["humedad"]["min"], 
+                           max_value=TERRAIN_PARAMS["humedad"]["max"], 
+                           value=TERRAIN_PARAMS["humedad"]["default"], 
+                           step=TERRAIN_PARAMS["humedad"]["step"])
+        
+        temperatura = st.slider("Temperatura (°C)", 
+                              min_value=TERRAIN_PARAMS["temperatura"]["min"], 
+                              max_value=TERRAIN_PARAMS["temperatura"]["max"], 
+                              value=TERRAIN_PARAMS["temperatura"]["default"], 
+                              step=TERRAIN_PARAMS["temperatura"]["step"])
+        
+        precipitacion = st.slider("Precipitación (mm)", 
+                                 min_value=TERRAIN_PARAMS["precipitacion"]["min"], 
+                                 max_value=TERRAIN_PARAMS["precipitacion"]["max"], 
+                                 value=TERRAIN_PARAMS["precipitacion"]["default"], 
+                                 step=TERRAIN_PARAMS["precipitacion"]["step"])
     
     with col2:
-        horas_de_sol = st.slider(
-            "Horas de sol", 
-            TERRAIN_PARAMS["horas_de_sol"]["min"], 
-            TERRAIN_PARAMS["horas_de_sol"]["max"], 
-            TERRAIN_PARAMS["horas_de_sol"]["default"],
-            TERRAIN_PARAMS["horas_de_sol"]["step"]
-        )
+        horas_de_sol = st.slider("Horas de sol", 
+                                min_value=TERRAIN_PARAMS["horas_de_sol"]["min"], 
+                                max_value=TERRAIN_PARAMS["horas_de_sol"]["max"], 
+                                value=TERRAIN_PARAMS["horas_de_sol"]["default"], 
+                                step=TERRAIN_PARAMS["horas_de_sol"]["step"])
+        
         tipo_de_suelo = st.selectbox("Tipo de suelo", SOIL_TYPES)
         temporada = st.selectbox("Temporada", SEASONS)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
     
     return {
         "ph": ph,
@@ -104,16 +95,16 @@ def render_terrain_params() -> Dict[str, Any]:
     }
 
 def handle_prediction(terrain_params: Dict[str, Any]):
-    prediction_service, firebase_service = init_services()
+    prediction_service, firebase_service, retraining_service = init_services()
     
     is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
     if not is_valid:
         st.error(f"Invalid parameters: {'; '.join(errors)}")
         return
     
-    success, message, prediction = prediction_service.predict_crop(terrain_params)
+    success, prediction, error_message = prediction_service.predict_crop(terrain_params)
     
-    if success and prediction:
+    if success:
         st.markdown(f'<div class="success-text">Cultivo Recomendado: {prediction}</div>', unsafe_allow_html=True)
         
         crop_data = terrain_params.copy()
@@ -124,109 +115,92 @@ def handle_prediction(terrain_params: Dict[str, Any]):
         else:
             st.warning("No se pudieron guardar los datos en la base de datos")
     else:
-        st.error(f"Error en la predicción: {message}")
+        st.error(f"Error en la predicción: {prediction}")
 
 def render_new_crop_form():
-    with st.expander("Añadir Nuevo Registro de Cultivo", expanded=False):
-        with st.form("formulario_nuevo_cultivo"):
-            col1, col2 = st.columns(2)
+    st.markdown("### Agregar Nuevo Cultivo")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        ph = st.slider("pH del suelo", 
+                      min_value=TERRAIN_PARAMS["ph"]["min"], 
+                      max_value=TERRAIN_PARAMS["ph"]["max"], 
+                      value=TERRAIN_PARAMS["ph"]["default"], 
+                      step=TERRAIN_PARAMS["ph"]["step"], 
+                      key="new_ph")
+        
+        humedad = st.slider("Humedad (%)", 
+                           min_value=TERRAIN_PARAMS["humedad"]["min"], 
+                           max_value=TERRAIN_PARAMS["humedad"]["max"], 
+                           value=TERRAIN_PARAMS["humedad"]["default"], 
+                           step=TERRAIN_PARAMS["humedad"]["step"], 
+                           key="new_humedad")
+        
+        temperatura = st.slider("Temperatura (°C)", 
+                              min_value=TERRAIN_PARAMS["temperatura"]["min"], 
+                              max_value=TERRAIN_PARAMS["temperatura"]["max"], 
+                              value=TERRAIN_PARAMS["temperatura"]["default"], 
+                              step=TERRAIN_PARAMS["temperatura"]["step"], 
+                              key="new_temperatura")
+        
+        precipitacion = st.slider("Precipitación (mm)", 
+                                 min_value=TERRAIN_PARAMS["precipitacion"]["min"], 
+                                 max_value=TERRAIN_PARAMS["precipitacion"]["max"], 
+                                 value=TERRAIN_PARAMS["precipitacion"]["default"], 
+                                 step=TERRAIN_PARAMS["precipitacion"]["step"], 
+                                 key="new_precipitacion")
+    
+    with col2:
+        horas_de_sol = st.slider("Horas de sol", 
+                                min_value=TERRAIN_PARAMS["horas_de_sol"]["min"], 
+                                max_value=TERRAIN_PARAMS["horas_de_sol"]["max"], 
+                                value=TERRAIN_PARAMS["horas_de_sol"]["default"], 
+                                step=TERRAIN_PARAMS["horas_de_sol"]["step"], 
+                                key="new_horas_de_sol")
+        
+        tipo_de_suelo = st.selectbox("Tipo de suelo", SOIL_TYPES, key="new_tipo_de_suelo")
+        temporada = st.selectbox("Temporada", SEASONS, key="new_temporada")
+        tipo_de_cultivo = st.text_input("Tipo de cultivo", key="new_tipo_de_cultivo")
+    
+    if st.button("Guardar Cultivo"):
+        if tipo_de_cultivo:
+            crop_data = {
+                "ph": ph,
+                "humedad": humedad,
+                "temperatura": temperatura,
+                "precipitacion": precipitacion,
+                "horas_de_sol": horas_de_sol,
+                "tipo_de_suelo": tipo_de_suelo,
+                "temporada": temporada,
+                "tipo_de_cultivo": tipo_de_cultivo
+            }
             
-            with col1:
-                nuevo_cultivo = st.text_input("Nombre del cultivo")
-                ph_nuevo = st.slider(
-                    "pH del suelo", 
-                    TERRAIN_PARAMS["ph"]["min"], 
-                    TERRAIN_PARAMS["ph"]["max"], 
-                    TERRAIN_PARAMS["ph"]["default"], 
-                    key="ph_nuevo"
-                )
-                humedad_nuevo = st.slider(
-                    "Humedad (%)", 
-                    TERRAIN_PARAMS["humedad"]["min"], 
-                    TERRAIN_PARAMS["humedad"]["max"], 
-                    TERRAIN_PARAMS["humedad"]["default"], 
-                    key="humedad_nuevo"
-                )
-                temperatura_nuevo = st.slider(
-                    "Temperatura (°C)", 
-                    TERRAIN_PARAMS["temperatura"]["min"], 
-                    TERRAIN_PARAMS["temperatura"]["max"], 
-                    TERRAIN_PARAMS["temperatura"]["default"], 
-                    key="temperatura_nuevo"
-                )
-            
-            with col2:
-                precipitacion_nuevo = st.slider(
-                    "Precipitación (mm)", 
-                    TERRAIN_PARAMS["precipitacion"]["min"], 
-                    TERRAIN_PARAMS["precipitacion"]["max"], 
-                    TERRAIN_PARAMS["precipitacion"]["default"], 
-                    key="precipitacion_nuevo"
-                )
-                horas_de_sol_nuevo = st.slider(
-                    "Horas de sol", 
-                    TERRAIN_PARAMS["horas_de_sol"]["min"], 
-                    TERRAIN_PARAMS["horas_de_sol"]["max"], 
-                    TERRAIN_PARAMS["horas_de_sol"]["default"], 
-                    key="horas_de_sol_nuevo"
-                )
-                tipo_de_suelo_nuevo = st.selectbox(
-                    "Tipo de suelo", 
-                    SOIL_TYPES, 
-                    key="tipo_de_suelo_nuevo"
-                )
-                temporada_nuevo = st.selectbox(
-                    "Temporada", 
-                    SEASONS, 
-                    key="temporada_nuevo"
-                )
-            
-            submit = st.form_submit_button("Guardar Registro", use_container_width=True)
-            
-            if submit:
-                is_valid, errors = DataValidator.validate_crop_name(nuevo_cultivo)
-                if not is_valid:
-                    st.error(f"{errors[0]}")
-                else:
-                    nuevo_registro = {
-                        "tipo_de_cultivo": nuevo_cultivo.strip(),
-                        "ph": ph_nuevo,
-                        "humedad": humedad_nuevo,
-                        "temperatura": temperatura_nuevo,
-                        "precipitacion": precipitacion_nuevo,
-                        "horas_de_sol": horas_de_sol_nuevo,
-                        "tipo_de_suelo": tipo_de_suelo_nuevo,
-                        "temporada": temporada_nuevo
-                    }
-                    
-                    _, firebase_service = init_services()
-                    if firebase_service.save_crop_data(nuevo_registro):
-                        st.success("Registro guardado correctamente.")
-                    else:
-                        st.error("Error al guardar el registro.")
+            _, firebase_service, _ = init_services()
+            if firebase_service.save_crop_data(crop_data):
+                st.success("Cultivo guardado correctamente")
+            else:
+                st.error("Error al guardar el cultivo")
+        else:
+            st.warning("Por favor ingresa el tipo de cultivo")
 
 def render_crops_history():
-    _, firebase_service = init_services()
+    _, firebase_service, _ = init_services()
     
     crops_data = firebase_service.get_all_crops()
     
     if crops_data:
         df = pd.DataFrame(crops_data)
         
-        if "timestamp" in df.columns:
-            df = df.sort_values("timestamp", ascending=False)
-        
         st.markdown("### Historial de Cultivos")
         
         stats = firebase_service.get_collection_stats()
         if stats:
-            col1, col2, col3 = st.columns(3)
+            col1, col2 = st.columns(2)
             with col1:
                 st.metric("Total Registros", stats.get("total_records", 0))
             with col2:
                 st.metric("Tipos de Cultivo", stats.get("unique_crops", 0))
-            with col3:
-                st.metric("Último Registro", "Disponible" if stats.get("latest_record") else "N/A")
         
         st.dataframe(
             df.style.background_gradient(cmap='Greens'),
@@ -235,26 +209,150 @@ def render_crops_history():
     else:
         st.info("No hay registros de cultivos disponibles.")
 
+def render_admin_section():
+    st.markdown("### Administración del Sistema")
+    
+    _, firebase_service, retraining_service = init_services()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### Limpiar Registros")
+        st.markdown("Elimina registros con campos vacíos o incompletos")
+        
+        if st.button("Limpiar Registros", help="Elimina registros con campos vacíos", key="btn_limpiar"):
+            with st.spinner("Limpiando registros..."):
+                result = firebase_service.clean_empty_records()
+                
+                if "error" not in result:
+                    st.success(f"✅ Limpieza completada: {result['deleted_records']} registros eliminados")
+                    st.info(f"📊 Registros restantes: {result['remaining_records']}")
+                else:
+                    st.error(f"❌ Error durante la limpieza: {result['error']}")
+    
+    with col2:
+        st.markdown("#### Reentrenar Modelo")
+        st.markdown("Reentrena el modelo con todos los datos de Firebase")
+        
+        if st.button("Reentrenar Modelo", help="Reentrena el modelo con datos de Firebase", key="btn_reentrenar"):
+            with st.spinner("Reentrenando modelo..."):
+                result = retraining_service.retrain_with_firebase_data()
+                
+                if result["success"]:
+                    st.success(f"Modelo reentrenado exitosamente")
+                    st.info(f"📊 Registros utilizados: {result['records_used']}")
+                else:
+                    st.error(f"Error en el reentrenamiento: {result['message']}")
+    
+    st.markdown("#### 📊 Estadísticas de Datos")
+    
+    stats = retraining_service.get_training_stats()
+    
+    if "error" not in stats:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"""
+            <div style="text-align: center; padding: 15px;">
+                <h3 style="color: #495057; margin: 0; font-size: 1.1rem;">Total de Registros</h3>
+                <p style="color: #28a745; font-size: 2rem; font-weight: bold; margin: 10px 0;">{stats.get("total_records", 0)}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"""
+            <div style="text-align: center; padding: 15px;">
+                <h3 style="color: #495057; margin: 0; font-size: 1.1rem;">Tipos de Cultivo</h3>
+                <p style="color: #28a745; font-size: 2rem; font-weight: bold; margin: 10px 0;">{len(stats.get("crop_distribution", {}))}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        if stats.get("crop_distribution"):
+            st.markdown("""
+            <div style="margin-top: 25px;">
+                <h4 style="color: #495057; margin-bottom: 20px; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                    🌱 Distribución de cultivos
+                </h4>
+                <div style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 12px;
+                    margin-top: 15px;
+                ">
+            """, unsafe_allow_html=True)
+            
+            for crop, count in stats["crop_distribution"].items():
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+                    border: 1px solid #e9ecef;
+                    border-radius: 12px;
+                    padding: 16px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="
+                            width: 8px;
+                            height: 8px;
+                            background: #28a745;
+                            border-radius: 50%;
+                            flex-shrink: 0;
+                        "></div>
+                        <span style="
+                            color: #495057; 
+                            font-weight: 600; 
+                            font-size: 1rem;
+                            text-transform: capitalize;
+                        ">{crop}</span>
+                    </div>
+                    <div style="
+                        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                        color: white;
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        font-size: 0.85rem;
+                        font-weight: bold;
+                        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+                        min-width: 60px;
+                        text-align: center;
+                    ">{count} registros</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("</div></div>", unsafe_allow_html=True)
+    else:
+        st.error(f"Error obteniendo estadísticas: {stats['error']}")
+
 def main():
     st.set_page_config(**APP_CONFIG)
-    
     load_css()
     
     render_sidebar()
     
-    st.title("AgroTech Verde")
-    st.markdown("### Sistema de Recomendación de Cultivos")
+    st.title("🌱 AgroTech Verde")
+    st.markdown("Sistema inteligente de recomendación de cultivos")
     
-    terrain_params = render_terrain_params()
+    tab1, tab2, tab3, tab4 = st.tabs(["Predicción", "Nuevo Cultivo", "Historial", "Administración"])
     
-    if st.button("Predecir Cultivo", key="btn-predict"):
-        handle_prediction(terrain_params)
+    with tab1:
+        st.markdown("### Predicción de Cultivos")
+        st.markdown("Ingresa los parámetros del terreno para obtener una recomendación de cultivo.")
+        
+        terrain_params = render_terrain_params()
+        
+        if st.button("Predecir Cultivo"):
+            handle_prediction(terrain_params)
     
-    st.markdown("---")
+    with tab2:
+        render_new_crop_form()
     
-    render_new_crop_form()
+    with tab3:
+        render_crops_history()
     
-    render_crops_history()
+    with tab4:
+        render_admin_section()
 
 if __name__ == "__main__":
     main()

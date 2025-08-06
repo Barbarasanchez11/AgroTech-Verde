@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import classification_report, ConfusionMatrixDisplay
+from sklearn.metrics import classification_report, ConfusionMatrixDisplay, accuracy_score
 import pickle
 import numpy as np
 import logging
@@ -16,6 +16,7 @@ from typing import Dict, Any, Tuple, Optional
 
 from src.config.config import get_data_path, get_model_path, ML_CONFIG, MODELS_DIR
 from src.services.firebase_service import FirebaseService
+from src.utils.validators import DataValidator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -250,6 +251,52 @@ class CropModelTrainer:
         except Exception as e:
             logger.error(f"Error making prediction: {e}")
             return None
+
+    def train_with_dataframe(self, df: pd.DataFrame) -> bool:
+        try:
+            logger.info(f"Training model with DataFrame: {df.shape}")
+            
+            is_valid, errors = DataValidator.validate_dataframe(df)
+            if not is_valid:
+                logger.error(f"Invalid DataFrame: {'; '.join(errors)}")
+                return False
+            
+            X = df.drop(columns=["tipo_de_cultivo"])
+            y = df["tipo_de_cultivo"]
+            
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=ML_CONFIG["test_size"], 
+                random_state=ML_CONFIG["random_state"]
+            )
+            
+            pipeline = Pipeline([
+                ("preprocessor", self.preprocessor),
+                ("classifier", RandomForestClassifier(random_state=ML_CONFIG["random_state"]))
+            ])
+            
+            pipeline.fit(X_train, y_train)
+            
+            y_pred = pipeline.predict(X_test)
+            accuracy = accuracy_score(y_test, y_pred)
+            
+            logger.info(f"Model trained successfully. Accuracy: {accuracy:.4f}")
+            
+            self.model = pipeline
+            self.is_trained = True
+            
+            self.label_encoder = LabelEncoder()
+            self.label_encoder.fit(y)
+            
+            if self.save_model("random_forest"):
+                logger.info("Model saved successfully")
+                return True
+            else:
+                logger.error("Failed to save model")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error training with DataFrame: {e}")
+            return False
 
 def main():
     trainer = CropModelTrainer()
