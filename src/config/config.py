@@ -29,7 +29,7 @@ ML_CONFIG = {
     "test_size": 0.2,
     "random_state": 42,
     "model_files": {
-        "random_forest": "modelo_rf.pkl",
+        "random_forest": "modelo_random_forest.pkl",
         "label_encoder": "label_encoder.pkl"
     }
 }
@@ -47,7 +47,10 @@ VALIDATION_CONFIG = {
 }
 
 def get_model_path(model_name: str) -> Path:
-    return MODELS_DIR / ML_CONFIG["model_files"].get(model_name, f"{model_name}.pkl")
+    if model_name in ML_CONFIG["model_files"]:
+        return MODELS_DIR / ML_CONFIG["model_files"][model_name]
+    else:
+        return MODELS_DIR / f"{model_name}.pkl"
 
 def get_data_path(filename: str) -> Path:
     return DATA_DIR / filename

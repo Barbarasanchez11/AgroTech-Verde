@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
 
-from src.config.config import get_data_path, get_model_path, ML_CONFIG
+from src.config.config import get_data_path, get_model_path, ML_CONFIG, MODELS_DIR
 from src.services.firebase_service import FirebaseService
 
 logging.basicConfig(level=logging.INFO)
@@ -187,7 +187,7 @@ class CropModelTrainer:
             plt.xticks(rotation=45)
             plt.tight_layout()
             
-            matrix_path = get_model_path("confusion_matrix.png")
+            matrix_path = MODELS_DIR / "confusion_matrix.png"
             plt.savefig(matrix_path, dpi=300, bbox_inches='tight')
             plt.close()
             
@@ -195,11 +195,12 @@ class CropModelTrainer:
             
         except Exception as e:
             logger.error(f"Error creating confusion matrix: {e}")
+            plt.close()
 
     def save_model(self, model_type: str = "random_forest") -> bool:
         try:
-            model_path = get_model_path(f"modelo_{model_type}.pkl")
-            encoder_path = get_model_path("label_encoder.pkl")
+            model_path = MODELS_DIR / f"modelo_{model_type}.pkl"
+            encoder_path = MODELS_DIR / "label_encoder.pkl"
 
             with open(model_path, "wb") as f:
                 pickle.dump(self.model, f)
