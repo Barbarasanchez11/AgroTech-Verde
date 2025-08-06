@@ -225,10 +225,10 @@ def render_admin_section():
                 result = firebase_service.clean_empty_records()
                 
                 if "error" not in result:
-                    st.success(f"✅ Limpieza completada: {result['deleted_records']} registros eliminados")
-                    st.info(f"📊 Registros restantes: {result['remaining_records']}")
+                    st.success(f" Limpieza completada: {result['deleted_records']} registros eliminados")
+                    st.info(f" Registros restantes: {result['remaining_records']}")
                 else:
-                    st.error(f"❌ Error durante la limpieza: {result['error']}")
+                    st.error(f" Error durante la limpieza: {result['error']}")
     
     with col2:
         st.markdown("#### Reentrenar Modelo")
@@ -274,23 +274,25 @@ def render_admin_section():
                 <div style="
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 12px;
+                    gap: 20px;
                     margin-top: 15px;
                 ">
             """, unsafe_allow_html=True)
             
             for crop, count in stats["crop_distribution"].items():
                 st.markdown(f"""
-                <div style="
+                <div class="crop-card" style="
                     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
                     border: 1px solid #e9ecef;
                     border-radius: 12px;
                     padding: 16px;
                     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                    transition: transform 0.2s, box-shadow 0.2s;
+                    transition: all 0.3s ease;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
+                    margin-bottom: 12px;
+                    cursor: pointer;
                 ">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <div style="

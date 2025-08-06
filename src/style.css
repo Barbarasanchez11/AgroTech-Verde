@@ -7,7 +7,7 @@
     margin-bottom: 0.5rem;
 }
 
-/* Todos los botones con color verde */
+
 .stButton > button,
 button[data-testid="baseButton-secondary"],
 .stFormSubmitButton > button,
@@ -42,7 +42,7 @@ button[data-testid="baseButton-secondary"][data-baseweb="button"]:active {
     position: static;
 }
 
-/* Botones de administración más compactos */
+
 button[data-testid="baseButton-secondary"][data-baseweb="button"] {
     padding: 8px 20px;
     min-width: 160px;
@@ -53,7 +53,7 @@ button[data-testid="baseButton-secondary"][data-baseweb="button"] {
     font-size: 0.9rem;
 }
 
-/* Selectores específicos para botones de administración */
+
 button[data-testid="baseButton-secondary"] {
     background-color: #4CAF50;
     color: white;
@@ -79,7 +79,7 @@ button[data-testid="baseButton-secondary"]:active {
     position: static;
 }
 
-/* Selector adicional para todos los botones de Streamlit */
+
 div[data-testid="stButton"] > button,
 div[data-testid="stButton"] button {
     background-color: #4CAF50;
@@ -108,7 +108,7 @@ div[data-testid="stButton"] button:active {
     position: static;
 }
 
-/* Slider: barra base gris, el gradiente lo pone el JS */
+
 div[data-baseweb="slider"] .st-c2 {
     background: #e0e0e0;
     position: relative;
@@ -124,10 +124,10 @@ div[data-baseweb="slider"] .st-c2 > div:first-child {
     left: 0;
     right: 0;
     z-index: 1;
-    /* El gradiente lo pone el JS */
+    
 }
 
-/* Quitar fondo verde de los labels de los extremos del slider y poner texto negro */
+
 div[data-baseweb="slider"] [class^="css-"][data-testid="stTickBarMin"],
 div[data-baseweb="slider"] [class^="css-"][data-testid="stTickBarMax"] {
     background: transparent;
@@ -136,7 +136,15 @@ div[data-baseweb="slider"] [class^="css-"][data-testid="stTickBarMax"] {
     font-weight: 600;
 }
 
-/* Resultado de predicción más pequeño */
+
 .success-text {
     font-size: 1.2rem;
+}
+
+
+.crop-card:hover {
+    background: linear-gradient(135deg, #f0f8f0 0%, #e8f5e8 100%) !important;
+    border-color: #90EE90 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(144, 238, 144, 0.3) !important;
 } 
