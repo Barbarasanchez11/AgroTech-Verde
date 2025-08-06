@@ -86,16 +86,19 @@ streamlit run src/app.py
 ```
 AgroTech-Verde/
 ├── src/                    # Código fuente principal
-│   ├── models/            # Modelos de ML
-│   ├── services/          # Servicios de negocio
-│   ├── utils/             # Utilidades
-│   └── config/            # Configuraciones
+│   ├── models/            # Modelos de ML y entrenamiento
+│   ├── services/          # Servicios (predicción, Firebase, reentrenamiento)
+│   ├── utils/             # Utilidades y validadores
+│   ├── config/            # Configuraciones centralizadas
+│   └── style.css          # Estilos CSS personalizados
 ├── tests/                 # Tests unitarios e integración
 ├── data/                  # Datos y datasets
-├── notebooks/             # Jupyter notebooks
-├── docs/                  # Documentación
-├── deployment/            # Configuración de despliegue
-├── requirements.txt       # Dependencias
+├── docs/                  # Documentación técnica
+├── .streamlit/            # Configuración de Streamlit
+├── requirements.txt       # Dependencias del proyecto
+├── pyproject.toml         # Configuración del proyecto
+├── pytest.ini            # Configuración de tests
+├── .gitignore            # Archivos ignorados por Git
 └── README.md             # Este archivo
 ```
 
@@ -137,7 +140,7 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 
 ## 👨‍💻 Autor
 
-**Tu Nombre** - [tu-email@ejemplo.com](mailto:tu-email@ejemplo.com)
+**Bárbara Sánchez Urbano** - [barbarasanchezurbano@gmail.com](barbarasanchezurbano@gmail.com)
 
 ## 🙏 Agradecimientos
 
