@@ -1,65 +1,53 @@
-"""
-Aplicación principal de AgroTech-Verde
-"""
 import streamlit as st
 import pandas as pd
 from typing import Dict, Any
 import logging
 
-# Importar servicios y configuraciones
 from src.config.config import APP_CONFIG, TERRAIN_PARAMS, SOIL_TYPES, SEASONS, STYLE_FILE
 from src.services.prediction_service import PredictionService
 from src.services.firebase_service import FirebaseService
 from src.utils.validators import DataValidator
 
-# Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Inicializar servicios
 @st.cache_resource
 def init_services():
-    """Inicializa los servicios de la aplicación"""
     prediction_service = PredictionService()
     firebase_service = FirebaseService()
     return prediction_service, firebase_service
 
 def load_css():
-    """Carga los estilos CSS"""
     try:
         with open(STYLE_FILE, "r") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
-        st.error("❌ Archivo de estilos no encontrado")
+        st.error("Archivo de estilos no encontrado")
         logger.error(f"Archivo de estilos no encontrado: {STYLE_FILE}")
 
 def render_sidebar():
-    """Renderiza la barra lateral"""
     with st.sidebar:
         st.image("https://img.icons8.com/color/96/000000/plant-under-rain.png", width=100)
         st.title("AgroTech Verde")
         st.markdown("---")
-        st.markdown("### 🌱 Clasificador Inteligente de Cultivos")
+        st.markdown("### Clasificador Inteligente de Cultivos")
         st.markdown("Sistema de recomendación de cultivos basado en condiciones ambientales y del suelo.")
         
-        # Mostrar información del modelo
         prediction_service, _ = init_services()
         model_info = prediction_service.get_model_info()
         
         if model_info.get("loaded"):
             st.markdown("---")
-            st.markdown("### 📊 Información del Modelo")
+            st.markdown("### Información del Modelo")
             st.markdown(f"**Tipo**: {model_info.get('model_type', 'N/A')}")
             st.markdown(f"**Cultivos disponibles**: {model_info.get('num_crops', 0)}")
         else:
-            st.warning("⚠️ Modelo no cargado")
+            st.warning("Modelo no cargado")
 
 def render_terrain_params() -> Dict[str, Any]:
-    """Renderiza los parámetros del terreno y retorna los valores"""
     st.markdown('<div class="param-section">', unsafe_allow_html=True)
-    st.markdown("#### 📊 Parámetros del Terreno")
+    st.markdown("#### Parámetros del Terreno")
     
-    # Crear columnas para mejor organización
     col1, col2 = st.columns(2)
     
     with col1:
@@ -116,35 +104,30 @@ def render_terrain_params() -> Dict[str, Any]:
     }
 
 def handle_prediction(terrain_params: Dict[str, Any]):
-    """Maneja la predicción de cultivos"""
     prediction_service, firebase_service = init_services()
     
-    # Validar parámetros
     is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
     if not is_valid:
-        st.error(f"❌ Parámetros inválidos: {'; '.join(errors)}")
+        st.error(f"Parámetros inválidos: {'; '.join(errors)}")
         return
     
-    # Hacer predicción
     success, message, prediction = prediction_service.predict_crop(terrain_params)
     
     if success and prediction:
-        st.markdown(f'<div class="success-text">🌿 Cultivo Recomendado: {prediction}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="success-text">Cultivo Recomendado: {prediction}</div>', unsafe_allow_html=True)
         
-        # Guardar en Firebase
         crop_data = terrain_params.copy()
         crop_data["tipo_de_cultivo"] = prediction
         
         if firebase_service.save_crop_data(crop_data):
-            st.success("✅ Datos guardados correctamente")
+            st.success("Datos guardados correctamente")
         else:
-            st.warning("⚠️ No se pudieron guardar los datos en la base de datos")
+            st.warning("No se pudieron guardar los datos en la base de datos")
     else:
-        st.error(f"❌ Error en la predicción: {message}")
+        st.error(f"Error en la predicción: {message}")
 
 def render_new_crop_form():
-    """Renderiza el formulario para añadir nuevos cultivos"""
-    with st.expander("➕ Añadir Nuevo Registro de Cultivo", expanded=False):
+    with st.expander("Añadir Nuevo Registro de Cultivo", expanded=False):
         with st.form("formulario_nuevo_cultivo"):
             col1, col2 = st.columns(2)
             
@@ -201,10 +184,9 @@ def render_new_crop_form():
             submit = st.form_submit_button("Guardar Registro", use_container_width=True)
             
             if submit:
-                # Validar nombre del cultivo
                 is_valid, errors = DataValidator.validate_crop_name(nuevo_cultivo)
                 if not is_valid:
-                    st.error(f"⚠️ {errors[0]}")
+                    st.error(f"{errors[0]}")
                 else:
                     nuevo_registro = {
                         "tipo_de_cultivo": nuevo_cultivo.strip(),
@@ -219,28 +201,23 @@ def render_new_crop_form():
                     
                     _, firebase_service = init_services()
                     if firebase_service.save_crop_data(nuevo_registro):
-                        st.success("✅ Registro guardado correctamente.")
+                        st.success("Registro guardado correctamente.")
                     else:
-                        st.error("❌ Error al guardar el registro.")
+                        st.error("Error al guardar el registro.")
 
 def render_crops_history():
-    """Renderiza el historial de cultivos"""
     _, firebase_service = init_services()
     
-    # Obtener datos de Firebase
     crops_data = firebase_service.get_all_crops()
     
     if crops_data:
-        # Convertir a DataFrame
         df = pd.DataFrame(crops_data)
         
-        # Ordenar por timestamp si existe
         if "timestamp" in df.columns:
             df = df.sort_values("timestamp", ascending=False)
         
-        st.markdown("### 📊 Historial de Cultivos")
+        st.markdown("### Historial de Cultivos")
         
-        # Mostrar estadísticas
         stats = firebase_service.get_collection_stats()
         if stats:
             col1, col2, col3 = st.columns(3)
@@ -251,42 +228,32 @@ def render_crops_history():
             with col3:
                 st.metric("Último Registro", "Disponible" if stats.get("latest_record") else "N/A")
         
-        # Mostrar tabla
         st.dataframe(
             df.style.background_gradient(cmap='Greens'),
             use_container_width=True
         )
     else:
-        st.info("📝 No hay registros de cultivos disponibles.")
+        st.info("No hay registros de cultivos disponibles.")
 
 def main():
-    """Función principal de la aplicación"""
-    # Configurar página
     st.set_page_config(**APP_CONFIG)
     
-    # Cargar estilos
     load_css()
     
-    # Renderizar sidebar
     render_sidebar()
     
-    # Título principal
-    st.title("🌱 AgroTech Verde")
+    st.title("AgroTech Verde")
     st.markdown("### Sistema de Recomendación de Cultivos")
     
-    # Renderizar parámetros del terreno
     terrain_params = render_terrain_params()
     
-    # Botón de predicción
     if st.button("Predecir Cultivo", key="btn-predict"):
         handle_prediction(terrain_params)
     
     st.markdown("---")
     
-    # Formulario para nuevos cultivos
     render_new_crop_form()
     
-    # Historial de cultivos
     render_crops_history()
 
 if __name__ == "__main__":
