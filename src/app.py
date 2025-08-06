@@ -22,8 +22,8 @@ def load_css():
         with open(STYLE_FILE, "r") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
-        st.error("Archivo de estilos no encontrado")
-        logger.error(f"Archivo de estilos no encontrado: {STYLE_FILE}")
+        st.error("Style file not found")
+        logger.error(f"Style file not found: {STYLE_FILE}")
 
 def render_sidebar():
     with st.sidebar:
@@ -108,7 +108,7 @@ def handle_prediction(terrain_params: Dict[str, Any]):
     
     is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
     if not is_valid:
-        st.error(f"Parámetros inválidos: {'; '.join(errors)}")
+        st.error(f"Invalid parameters: {'; '.join(errors)}")
         return
     
     success, message, prediction = prediction_service.predict_crop(terrain_params)
