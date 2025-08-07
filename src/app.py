@@ -12,7 +12,6 @@ from src.utils.validators import DataValidator
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-@st.cache_resource
 def init_services():
     prediction_service = PredictionService()
     firebase_service = FirebaseService()
