@@ -142,12 +142,5 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 
 **Bárbara Sánchez Urbano** - [barbarasanchezurbano@gmail.com](barbarasanchezurbano@gmail.com)
 
-## 🙏 Agradecimientos
-
-- Dataset de cultivos agrícolas
-- Comunidad de Streamlit
-- Herramientas de Machine Learning de Scikit-learn
-
----
 
 ⭐ Si este proyecto te ha sido útil, ¡dale una estrella al repositorio!

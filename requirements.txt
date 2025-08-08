@@ -4,6 +4,4 @@ numpy
 scikit-learn
 matplotlib
 seaborn
-firebase-admin
-google-cloud-firestore
 python-dotenv
