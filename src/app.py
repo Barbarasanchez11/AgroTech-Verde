@@ -128,7 +128,7 @@ def handle_prediction(terrain_params: Dict[str, Any]):
         # Mostrar parámetros ingresados
         st.markdown("### Parámetros Ingresados")
         params_df = pd.DataFrame([terrain_params])
-        st.dataframe(params_df, use_container_width=True, hide_index=True)
+        st.dataframe(params_df, use_container_width=True, index=False)
         
         # Realizar predicción
         prediction_result = prediction_service.predict_crop(terrain_params)
@@ -476,7 +476,7 @@ def main():
         
         render_sidebar()
         
-        st.title("🌱 AgroTech Verde")
+        st.title("AgroTech Verde")
         st.markdown("Sistema inteligente de recomendación de cultivos")
         
         tab1, tab2, tab3, tab4 = st.tabs(["Predicción", "Nuevo Cultivo", "Historial", "Administración"])
@@ -490,6 +490,25 @@ def main():
             if st.button("Predecir Cultivo", key="predict_button"):
                 with st.spinner("Procesando predicción..."):
                     handle_prediction(terrain_params)
+        
+        st.markdown("""
+        <style>
+        .stButton > button {
+            width: 100%;
+            color: white !important;
+            font-weight: bold !important;
+        }
+        .stButton > button:hover {
+            color: white !important;
+        }
+        .stButton > button:focus {
+            color: white !important;
+        }
+        .stButton > button:active {
+            color: white !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         
         with tab2:
             render_new_crop_form()
