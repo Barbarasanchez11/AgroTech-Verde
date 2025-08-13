@@ -128,7 +128,7 @@ def handle_prediction(terrain_params: Dict[str, Any]):
         # Mostrar parámetros ingresados
         st.markdown("### Parámetros Ingresados")
         params_df = pd.DataFrame([terrain_params])
-        st.dataframe(params_df, use_container_width=True, index=False)
+        st.dataframe(params_df, use_container_width=True, hide_index=True)
         
         # Realizar predicción
         prediction_result = prediction_service.predict_crop(terrain_params)
