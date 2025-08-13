@@ -171,14 +171,14 @@ def handle_prediction(terrain_params: Dict[str, Any]):
             try:
                 save_result = firebase_service.save_prediction(terrain_params, crop, confidence)
                 if save_result.get("success"):
-                    st.success(f"✅ **{crop.upper()}** recomendado y guardado exitosamente!")
-                    st.info(f"🌱 **Cultivo:** {crop.capitalize()} | 📊 **Confianza:** {confidence:.1f}% | 💾 **Guardado en base de datos**")
-                    st.success("💡 **Consejo:** Consulta tu historial de predicciones en la pestaña 'Historial' para ver todas tus recomendaciones anteriores.")
+                    st.success(f"**{crop.upper()}** recomendado y guardado exitosamente!")
+                    st.info(f"**Cultivo:** {crop.capitalize()} | **Confianza:** {confidence:.1f}% | **Guardado en base de datos**")
+                    st.success("**Consejo:** Consulta tu historial de predicciones en la pestaña 'Historial' para ver todas tus recomendaciones anteriores.")
                 else:
-                    st.warning("⚠️ La predicción se realizó pero no se pudo guardar en la base de datos")
+                    st.warning("La predicción se realizó pero no se pudo guardar en la base de datos")
             except Exception as e:
                 logger.error(f"Error saving to Firebase: {e}")
-                st.warning("⚠️ La predicción se realizó pero no se pudo guardar en la base de datos")
+                st.warning("La predicción se realizó pero no se pudo guardar en la base de datos")
             
             # Mostrar información adicional del cultivo
             st.markdown("### 📊 Información del Cultivo")
@@ -192,9 +192,9 @@ def handle_prediction(terrain_params: Dict[str, Any]):
                 margin: 20px 0;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             ">
-                <h4 style="color: #495057; margin: 0 0 15px 0;">🌱 **{crop.capitalize()}** - Cultivo Recomendado</h4>
+                <h4 style="color: #495057; margin: 0 0 15px 0;">**{crop.capitalize()}** - Cultivo Recomendado</h4>
                 <div style="color: #6c757d; line-height: 1.6;">
-                    <p><strong>✅ Condiciones ideales detectadas:</strong></p>
+                    <p><strong>Condiciones ideales detectadas:</strong></p>
                     <ul style="margin: 10px 0; padding-left: 20px;">
                         <li>pH del suelo: <strong>{terrain_params['ph']}</strong></li>
                         <li>Humedad: <strong>{terrain_params['humedad']}%</strong></li>
@@ -205,19 +205,19 @@ def handle_prediction(terrain_params: Dict[str, Any]):
                         <li>Temporada: <strong>{terrain_params['temporada']}</strong></li>
                     </ul>
                     <p style="margin-top: 15px; color: #28a745; font-weight: 600;">
-                        🎯 **Confianza del modelo:** {confidence:.1f}%
+                        **Confianza del modelo:** {confidence:.1f}%
                     </p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            st.info(f"💡 **{crop.capitalize()}** es la mejor opción para las condiciones de tu terreno. Esta recomendación se basa en el análisis de múltiples factores ambientales y del suelo.")
+            st.info(f"**{crop.capitalize()}** es la mejor opción para las condiciones de tu terreno. Esta recomendación se basa en el análisis de múltiples factores ambientales y del suelo.")
             
         else:
             error_message = crop_or_error
-            st.error(f"❌ **Error en la predicción:** {error_message}")
+            st.error(f"**Error en la predicción:** {error_message}")
             if error_details:
-                st.error(f"🔍 **Detalles técnicos:** {error_details}")
+                st.error(f"**Detalles técnicos:** {error_details}")
             
             st.markdown("""
             <div style="
@@ -227,7 +227,7 @@ def handle_prediction(terrain_params: Dict[str, Any]):
                 padding: 15px;
                 margin: 15px 0;
             ">
-                <h5 style="color: #856404; margin: 0 0 10px 0;">💡 **Sugerencias para resolver el problema:**</h5>
+                <h5 style="color: #856404; margin: 0 0 10px 0;">**Sugerencias para resolver el problema:**</h5>
                 <ul style="color: #856404; margin: 0; padding-left: 20px;">
                     <li>Verifica que todos los parámetros estén dentro de los rangos válidos</li>
                     <li>Intenta ajustar ligeramente los valores de entrada</li>
