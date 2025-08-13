@@ -2,6 +2,17 @@ import streamlit as st
 import pandas as pd
 from typing import Dict, Any
 import logging
+import warnings
+import os
+
+# Configurar warnings para reducir mensajes innecesarios
+warnings.filterwarnings('ignore')
+
+# Configuraciones de Streamlit para mejor rendimiento
+os.environ['STREAMLIT_SERVER_ENABLE_CORS'] = 'true'
+os.environ['STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION'] = 'true'
+os.environ['STREAMLIT_SERVER_FILE_WATCHER_TYPE'] = 'none'
+os.environ['STREAMLIT_SERVER_RUN_ON_SAVE'] = 'false'
 
 from src.config.config import APP_CONFIG, TERRAIN_PARAMS, SOIL_TYPES, SEASONS, STYLE_FILE
 from src.services.prediction_service import PredictionService
@@ -9,15 +20,29 @@ from src.services.firebase_service import FirebaseService
 from src.services.retraining_service import RetrainingService
 from src.utils.validators import DataValidator
 
-logging.basicConfig(level=logging.INFO)
+# Configurar logging más específico
+logging.basicConfig(
+    level=logging.WARNING,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
+# Configurar Streamlit para mejor rendimiento
+st.set_option('deprecation.showPyplotGlobalUse', False)
+st.set_option('deprecation.showfileUploaderEncoding', False)
+st.set_option('deprecation.showPyplotGlobalUse', False)
+
 def init_services():
-    prediction_service = PredictionService()
-    firebase_service = FirebaseService()
-    retraining_service = RetrainingService()
-    prediction_service.load_models()
-    return prediction_service, firebase_service, retraining_service
+    try:
+        prediction_service = PredictionService()
+        firebase_service = FirebaseService()
+        retraining_service = RetrainingService()
+        prediction_service.load_models()
+        return prediction_service, firebase_service, retraining_service
+    except Exception as e:
+        logger.error(f"Error initializing services: {e}")
+        st.error("Error al inicializar los servicios. Por favor, recarga la página.")
+        return None, None, None
 
 def load_css():
     try:
@@ -94,27 +119,81 @@ def render_terrain_params():
     }
 
 def handle_prediction(terrain_params: Dict[str, Any]):
-    prediction_service, firebase_service, retraining_service = init_services()
-    
-    is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
-    if not is_valid:
-        st.error(f"Invalid parameters: {'; '.join(errors)}")
-        return
-    
-    success, prediction, error_message = prediction_service.predict_crop(terrain_params)
-    
-    if success:
-        st.markdown(f'<div class="success-text">Cultivo Recomendado: {prediction}</div>', unsafe_allow_html=True)
+    try:
+        prediction_service, firebase_service, retraining_service = init_services()
         
-        crop_data = terrain_params.copy()
-        crop_data["tipo_de_cultivo"] = prediction
+        if not all([prediction_service, firebase_service, retraining_service]):
+            st.error("No se pudieron inicializar los servicios. Por favor, recarga la página.")
+            return
         
-        if firebase_service.save_crop_data(crop_data):
-            st.success("Datos guardados correctamente")
+        is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
+        if not is_valid:
+            st.error("Parámetros inválidos:")
+            for error in errors:
+                st.error(f"- {error}")
+            return
+        
+        # Mostrar parámetros ingresados
+        st.markdown("### Parámetros Ingresados")
+        params_df = pd.DataFrame([terrain_params])
+        st.dataframe(params_df, use_container_width=True)
+        
+        # Realizar predicción
+        prediction_result = prediction_service.predict_crop(terrain_params)
+        
+        if prediction_result.get("success"):
+            crop = prediction_result["crop"]
+            confidence = prediction_result["confidence"]
+            
+            st.markdown("### 🎯 Resultado de la Predicción")
+            
+            # Crear tarjeta de resultado
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 15px;
+                text-align: center;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                margin: 20px 0;
+            ">
+                <h2 style="margin: 0; font-size: 2.5rem;">🌱 {crop.upper()}</h2>
+                <p style="font-size: 1.2rem; margin: 10px 0;">Cultivo Recomendado</p>
+                <div style="
+                    background: rgba(255,255,255,0.2);
+                    padding: 10px 20px;
+                    border-radius: 25px;
+                    display: inline-block;
+                    margin-top: 15px;
+                ">
+                    <strong>Confianza: {confidence:.1f}%</strong>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Guardar en Firebase
+            try:
+                save_result = firebase_service.save_prediction(terrain_params, crop, confidence)
+                if save_result.get("success"):
+                    st.success("✅ Predicción guardada en la base de datos")
+                else:
+                    st.warning("⚠️ La predicción se realizó pero no se pudo guardar en la base de datos")
+            except Exception as e:
+                logger.error(f"Error saving to Firebase: {e}")
+                st.warning("⚠️ La predicción se realizó pero no se pudo guardar en la base de datos")
+            
+            # Mostrar información adicional del cultivo
+            st.markdown("### 📊 Información del Cultivo")
+            st.info(f"El cultivo **{crop}** es la mejor opción para las condiciones especificadas.")
+            
         else:
-            st.warning("No se pudieron guardar los datos en la base de datos")
-    else:
-        st.error(f"Error en la predicción: {prediction}")
+            st.error(f"Error en la predicción: {prediction_result.get('error', 'Error desconocido')}")
+            
+    except Exception as e:
+        logger.error(f"Error in handle_prediction: {e}")
+        st.error("Ha ocurrido un error durante la predicción. Por favor, intenta nuevamente.")
+        st.exception(e)
 
 def render_new_crop_form():
     st.markdown("### Agregar Nuevo Cultivo")
@@ -327,33 +406,59 @@ def render_admin_section():
         st.error(f"Error obteniendo estadísticas: {stats['error']}")
 
 def main():
-    st.set_page_config(**APP_CONFIG)
-    load_css()
-    
-    render_sidebar()
-    
-    st.title("🌱 AgroTech Verde")
-    st.markdown("Sistema inteligente de recomendación de cultivos")
-    
-    tab1, tab2, tab3, tab4 = st.tabs(["Predicción", "Nuevo Cultivo", "Historial", "Administración"])
-    
-    with tab1:
-        st.markdown("### Predicción de Cultivos")
-        st.markdown("Ingresa los parámetros del terreno para obtener una recomendación de cultivo.")
+    try:
+        # Configuración de página con opciones optimizadas
+        st.set_page_config(
+            page_title=APP_CONFIG["page_title"],
+            page_icon=APP_CONFIG["page_icon"],
+            layout=APP_CONFIG["layout"],
+            initial_sidebar_state=APP_CONFIG["initial_sidebar_state"]
+        )
         
-        terrain_params = render_terrain_params()
+        # Configuraciones adicionales para estabilidad
+        st.markdown("""
+        <style>
+        .stApp {
+            max-width: 100%;
+        }
+        .stButton > button {
+            width: 100%;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         
-        if st.button("Predecir Cultivo"):
-            handle_prediction(terrain_params)
-    
-    with tab2:
-        render_new_crop_form()
-    
-    with tab3:
-        render_crops_history()
-    
-    with tab4:
-        render_admin_section()
+        load_css()
+        
+        render_sidebar()
+        
+        st.title("🌱 AgroTech Verde")
+        st.markdown("Sistema inteligente de recomendación de cultivos")
+        
+        tab1, tab2, tab3, tab4 = st.tabs(["Predicción", "Nuevo Cultivo", "Historial", "Administración"])
+        
+        with tab1:
+            st.markdown("### Predicción de Cultivos")
+            st.markdown("Ingresa los parámetros del terreno para obtener una recomendación de cultivo.")
+            
+            terrain_params = render_terrain_params()
+            
+            if st.button("Predecir Cultivo", key="predict_button"):
+                with st.spinner("Procesando predicción..."):
+                    handle_prediction(terrain_params)
+        
+        with tab2:
+            render_new_crop_form()
+        
+        with tab3:
+            render_crops_history()
+        
+        with tab4:
+            render_admin_section()
+            
+    except Exception as e:
+        logger.error(f"Error in main: {e}")
+        st.error("Ha ocurrido un error inesperado. Por favor, recarga la página.")
+        st.exception(e)
 
 if __name__ == "__main__":
     main()
