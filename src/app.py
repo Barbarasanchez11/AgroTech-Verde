@@ -313,37 +313,25 @@ def render_crops_history():
     st.markdown("### Historial de Cultivos")
     
     _, firebase_service, _ = init_services()
-    crops = firebase_service.get_all_crops()
+    crops_data = firebase_service.get_all_crops()
     
-    if "error" not in crops:
-        if crops:
-            st.markdown(f"**Total de registros:** {len(crops)}")
-            
-            for crop in crops:
-                with st.expander(f"Cultivo: {crop.get('tipo_de_cultivo', 'N/A')} - {crop.get('timestamp', 'N/A')}"):
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.write(f"**pH:** {crop.get('ph', 'N/A')}")
-                        st.write(f"**Humedad:** {crop.get('humedad', 'N/A')}%")
-                        st.write(f"**Temperatura:** {crop.get('temperatura', 'N/A')}°C")
-                        st.write(f"**Precipitación:** {crop.get('precipitacion', 'N/A')} mm")
-                    
-                    with col2:
-                        st.write(f"**Horas de sol:** {crop.get('horas_de_sol', 'N/A')} h")
-                        st.write(f"**Tipo de suelo:** {crop.get('tipo_de_suelo', 'N/A')}")
-                        st.write(f"**Temporada:** {crop.get('temporada', 'N/A')}")
-                        st.write(f"**Tipo de cultivo:** {crop.get('tipo_de_cultivo', 'N/A')}")
-                    
-                    if 'confidence' in crop:
-                        st.write(f"**Confianza:** {crop.get('confidence', 'N/A')}%")
-                    
-                    if 'prediction_type' in crop:
-                        st.write(f"**Tipo:** {crop.get('prediction_type', 'N/A')}")
-        else:
-            st.info("No hay registros de cultivos disponibles")
+    if crops_data:
+        df = pd.DataFrame(crops_data)
+        
+        stats = firebase_service.get_collection_stats()
+        if stats:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total Registros", stats.get("total_records", 0))
+            with col2:
+                st.metric("Tipos de Cultivo", stats.get("unique_crops", 0))
+        
+        st.dataframe(
+            df.style.background_gradient(cmap='Greens'),
+            use_container_width=True
+        )
     else:
-        st.error(f"Error obteniendo historial: {crops['error']}")
+        st.info("No hay registros de cultivos disponibles.")
 
 def main():
     try:
