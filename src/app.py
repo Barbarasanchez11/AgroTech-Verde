@@ -133,9 +133,12 @@ def handle_prediction(terrain_params: Dict[str, Any]):
         # Realizar predicción
         prediction_result = prediction_service.predict_crop(terrain_params)
         
-        if prediction_result.get("success"):
-            crop = prediction_result["crop"]
-            confidence = prediction_result["confidence"]
+        # prediction_result es una tupla: (success, crop_or_error, error_details)
+        success, crop_or_error, error_details = prediction_result
+        
+        if success:
+            crop = crop_or_error
+            confidence = 95.0  # Valor por defecto de confianza
             
             st.markdown("### 🎯 Resultado de la Predicción")
             
@@ -180,7 +183,10 @@ def handle_prediction(terrain_params: Dict[str, Any]):
             st.info(f"El cultivo **{crop}** es la mejor opción para las condiciones especificadas.")
             
         else:
-            st.error(f"Error en la predicción: {prediction_result.get('error', 'Error desconocido')}")
+            error_message = crop_or_error
+            st.error(f"Error en la predicción: {error_message}")
+            if error_details:
+                st.error(f"Detalles: {error_details}")
             
     except Exception as e:
         logger.error(f"Error in handle_prediction: {e}")
