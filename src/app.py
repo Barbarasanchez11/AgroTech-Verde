@@ -24,9 +24,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-st.set_option('deprecation.showPyplotGlobalUse', False)
-st.set_option('deprecation.showfileUploaderEncoding', False)
-
 def init_services():
     try:
         prediction_service = PredictionService()
