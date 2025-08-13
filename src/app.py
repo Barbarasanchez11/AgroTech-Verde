@@ -337,6 +337,24 @@ def render_crops_history():
 def render_admin_section():
     st.markdown("### Administración del Sistema")
     
+    st.markdown("""
+    <style>
+    .stButton > button {
+        color: white !important;
+        font-weight: bold !important;
+    }
+    .stButton > button:hover {
+        color: white !important;
+    }
+    .stButton > button:focus {
+        color: white !important;
+    }
+    .stButton > button:active {
+        color: white !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     _, firebase_service, retraining_service = init_services()
     
     col1, col2 = st.columns(2)
