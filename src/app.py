@@ -5,10 +5,8 @@ import logging
 import warnings
 import os
 
-# Configurar warnings para reducir mensajes innecesarios
 warnings.filterwarnings('ignore')
 
-# Configuraciones de Streamlit para mejor rendimiento
 os.environ['STREAMLIT_SERVER_ENABLE_CORS'] = 'true'
 os.environ['STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION'] = 'true'
 os.environ['STREAMLIT_SERVER_FILE_WATCHER_TYPE'] = 'none'
@@ -20,17 +18,14 @@ from src.services.firebase_service import FirebaseService
 from src.services.retraining_service import RetrainingService
 from src.utils.validators import DataValidator
 
-# Configurar logging más específico
 logging.basicConfig(
     level=logging.WARNING,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Configurar Streamlit para mejor rendimiento
 st.set_option('deprecation.showPyplotGlobalUse', False)
 st.set_option('deprecation.showfileUploaderEncoding', False)
-st.set_option('deprecation.showPyplotGlobalUse', False)
 
 def init_services():
     try:
@@ -407,7 +402,6 @@ def render_admin_section():
 
 def main():
     try:
-        # Configuración de página con opciones optimizadas
         st.set_page_config(
             page_title=APP_CONFIG["page_title"],
             page_icon=APP_CONFIG["page_icon"],
@@ -415,7 +409,6 @@ def main():
             initial_sidebar_state=APP_CONFIG["initial_sidebar_state"]
         )
         
-        # Configuraciones adicionales para estabilidad
         st.markdown("""
         <style>
         .stApp {
