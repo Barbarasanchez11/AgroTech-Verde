@@ -44,6 +44,46 @@ class PredictionService:
             logger.error(f"Error loading models: {e}")
             return False
 
+    def _validate_model_consistency(self) -> bool:
+        try:
+            if not self.is_loaded or not self.model or not self.label_encoder:
+                return False
+            
+            if not hasattr(self.label_encoder, "classes_"):
+                return False
+            
+            expected_crops = ['arroz', 'lentejas', 'maiz', 'naranjas', 'soja', 'trigo', 'uva', 'zanahoria']
+            actual_crops = list(self.label_encoder.classes_)
+            
+            if set(actual_crops) != set(expected_crops):
+                logger.warning("Model inconsistency detected, retraining automatically")
+                self._auto_retrain_model()
+                return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating model consistency: {e}")
+            return False
+
+    def _auto_retrain_model(self) -> bool:
+        try:
+            from src.models.fix_model import train_clean_model
+            
+            logger.info("Starting automatic model retraining...")
+            pipeline, label_encoder, accuracy = train_clean_model()
+            
+            self.model = pipeline
+            self.label_encoder = label_encoder
+            self.is_loaded = True
+            
+            logger.info(f"Model automatically retrained with accuracy: {accuracy}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error in automatic retraining: {e}")
+            return False
+
     def predict_crop(self, terrain_params: Dict[str, Any]) -> Tuple[bool, str, Optional[str]]:
         try:
             is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
@@ -54,8 +94,9 @@ class PredictionService:
                 if not self.load_models():
                     return False, "Model loading error", None
 
-            if not hasattr(self.label_encoder, "classes_"):
-                return False, "Invalid encoder", "Missing classes in encoder"
+            if not self._validate_model_consistency():
+                if not self.is_loaded:
+                    return False, "Model consistency error", "Model validation failed"
 
             df = pd.DataFrame([terrain_params])
             prediction = self.model.predict(df)
