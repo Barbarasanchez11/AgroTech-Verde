@@ -302,15 +302,12 @@ def render_new_crop_form():
             }
             
             _, firebase_service, _ = init_services()
-            result = firebase_service.add_crop(crop_data)
-            
-            if "error" not in result:
-                st.success(f"Cultivo guardado exitosamente")
-                st.info(f"ID del registro: {result['doc_id']}")
+            if firebase_service.save_crop_data(crop_data):
+                st.success("Cultivo guardado correctamente")
             else:
-                st.error(f"Error guardando cultivo: {result['error']}")
+                st.error("Error al guardar el cultivo")
         else:
-            st.warning("Por favor, ingresa el tipo de cultivo")
+            st.warning("Por favor ingresa el tipo de cultivo")
 
 def render_crops_history():
     st.markdown("### Historial de Cultivos")
