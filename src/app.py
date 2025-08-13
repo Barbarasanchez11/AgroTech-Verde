@@ -302,173 +302,51 @@ def render_new_crop_form():
             }
             
             _, firebase_service, _ = init_services()
-            if firebase_service.save_crop_data(crop_data):
-                st.success("Cultivo guardado correctamente")
+            result = firebase_service.add_crop(crop_data)
+            
+            if "error" not in result:
+                st.success(f"Cultivo guardado exitosamente")
+                st.info(f"ID del registro: {result['doc_id']}")
             else:
-                st.error("Error al guardar el cultivo")
+                st.error(f"Error guardando cultivo: {result['error']}")
         else:
-            st.warning("Por favor ingresa el tipo de cultivo")
+            st.warning("Por favor, ingresa el tipo de cultivo")
 
 def render_crops_history():
+    st.markdown("### Historial de Cultivos")
+    
     _, firebase_service, _ = init_services()
+    crops = firebase_service.get_all_crops()
     
-    crops_data = firebase_service.get_all_crops()
-    
-    if crops_data:
-        df = pd.DataFrame(crops_data)
-        
-        st.markdown("### Historial de Cultivos")
-        
-        stats = firebase_service.get_collection_stats()
-        if stats:
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Total Registros", stats.get("total_records", 0))
-            with col2:
-                st.metric("Tipos de Cultivo", stats.get("unique_crops", 0))
-        
-        st.dataframe(
-            df.style.background_gradient(cmap='Greens'),
-            use_container_width=True
-        )
-    else:
-        st.info("No hay registros de cultivos disponibles.")
-
-def render_admin_section():
-    st.markdown("### Administración del Sistema")
-    
-    st.markdown("""
-    <style>
-    .stButton > button {
-        color: white;
-        font-weight: bold;
-    }
-    .stButton > button:hover {
-        color: white;
-    }
-    .stButton > button:focus {
-        color: white;
-    }
-    .stButton > button:active {
-        color: white;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    _, firebase_service, retraining_service = init_services()
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### Limpiar Registros")
-        st.markdown("Elimina registros con campos vacíos o incompletos")
-        
-        if st.button("Limpiar Registros", help="Elimina registros con campos vacíos", key="btn_limpiar"):
-            with st.spinner("Limpiando registros..."):
-                result = firebase_service.clean_empty_records()
-                
-                if "error" not in result:
-                    st.success(f" Limpieza completada: {result['deleted_records']} registros eliminados")
-                    st.info(f" Registros restantes: {result['remaining_records']}")
-                else:
-                    st.error(f" Error durante la limpieza: {result['error']}")
-    
-    with col2:
-        st.markdown("#### Reentrenar Modelo")
-        st.markdown("Reentrena el modelo con todos los datos de Firebase")
-        
-        if st.button("Reentrenar Modelo", help="Reentrena el modelo con datos de Firebase", key="btn_reentrenar"):
-            with st.spinner("Reentrenando modelo..."):
-                result = retraining_service.retrain_with_firebase_data()
-                
-                if result["success"]:
-                    st.success(f"Modelo reentrenado exitosamente")
-                    st.info(f"📊 Registros utilizados: {result['records_used']}")
-                else:
-                    st.error(f"Error en el reentrenamiento: {result['message']}")
-    
-    st.markdown("#### 📊 Estadísticas de Datos")
-    
-    stats = retraining_service.get_training_stats()
-    
-    if "error" not in stats:
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"""
-            <div style="text-align: center; padding: 15px;">
-                <h3 style="color: #495057; margin: 0; font-size: 1.1rem;">Total de Registros</h3>
-                <p style="color: #28a745; font-size: 2rem; font-weight: bold; margin: 10px 0;">{stats.get("total_records", 0)}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.markdown(f"""
-            <div style="text-align: center; padding: 15px;">
-                <h3 style="color: #495057; margin: 0; font-size: 1.1rem;">Tipos de Cultivo</h3>
-                <p style="color: #28a745; font-size: 2rem; font-weight: bold; margin: 10px 0;">{len(stats.get("crop_distribution", {}))}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        if stats.get("crop_distribution"):
-            st.markdown("""
-            <div style="margin-top: 25px;">
-                <h4 style="color: #495057; margin-bottom: 20px; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
-                    🌱 Distribución de cultivos
-                </h4>
-                <div style="
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 20px;
-                    margin-top: 15px;
-                ">
-            """, unsafe_allow_html=True)
+    if "error" not in crops:
+        if crops:
+            st.markdown(f"**Total de registros:** {len(crops)}")
             
-            for crop, count in stats["crop_distribution"].items():
-                st.markdown(f"""
-                <div class="crop-card" style="
-                    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-                    border: 1px solid #e9ecef;
-                    border-radius: 12px;
-                    padding: 16px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                    transition: all 0.3s ease;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 12px;
-                    cursor: pointer;
-                ">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="
-                            width: 8px;
-                            height: 8px;
-                            background: #28a745;
-                            border-radius: 50%;
-                            flex-shrink: 0;
-                        "></div>
-                        <span style="
-                            color: #495057; 
-                            font-weight: 600; 
-                            font-size: 1rem;
-                            text-transform: capitalize;
-                        ">{crop}</span>
-                    </div>
-                    <div style="
-                        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                        color: white;
-                        padding: 6px 12px;
-                        border-radius: 20px;
-                        font-size: 0.85rem;
-                        font-weight: bold;
-                        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
-                        min-width: 60px;
-                        text-align: center;
-                    ">{count} registros</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown("</div></div>", unsafe_allow_html=True)
+            for crop in crops:
+                with st.expander(f"Cultivo: {crop.get('tipo_de_cultivo', 'N/A')} - {crop.get('timestamp', 'N/A')}"):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write(f"**pH:** {crop.get('ph', 'N/A')}")
+                        st.write(f"**Humedad:** {crop.get('humedad', 'N/A')}%")
+                        st.write(f"**Temperatura:** {crop.get('temperatura', 'N/A')}°C")
+                        st.write(f"**Precipitación:** {crop.get('precipitacion', 'N/A')} mm")
+                    
+                    with col2:
+                        st.write(f"**Horas de sol:** {crop.get('horas_de_sol', 'N/A')} h")
+                        st.write(f"**Tipo de suelo:** {crop.get('tipo_de_suelo', 'N/A')}")
+                        st.write(f"**Temporada:** {crop.get('temporada', 'N/A')}")
+                        st.write(f"**Tipo de cultivo:** {crop.get('tipo_de_cultivo', 'N/A')}")
+                    
+                    if 'confidence' in crop:
+                        st.write(f"**Confianza:** {crop.get('confidence', 'N/A')}%")
+                    
+                    if 'prediction_type' in crop:
+                        st.write(f"**Tipo:** {crop.get('prediction_type', 'N/A')}")
+        else:
+            st.info("No hay registros de cultivos disponibles")
     else:
-        st.error(f"Error obteniendo estadísticas: {stats['error']}")
+        st.error(f"Error obteniendo historial: {crops['error']}")
 
 def main():
     try:
@@ -497,7 +375,7 @@ def main():
         st.title("AgroTech Verde")
         st.markdown("Sistema inteligente de recomendación de cultivos")
         
-        tab1, tab2, tab3, tab4 = st.tabs(["Predicción", "Nuevo Cultivo", "Historial", "Administración"])
+        tab1, tab2, tab3 = st.tabs(["Predicción", "Nuevo Cultivo", "Historial"])
         
         with tab1:
             st.markdown("### Predicción de Cultivos")
@@ -514,9 +392,6 @@ def main():
         
         with tab3:
             render_crops_history()
-        
-        with tab4:
-            render_admin_section()
             
     except Exception as e:
         logger.error(f"Error in main: {e}")
