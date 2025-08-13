@@ -340,17 +340,17 @@ def render_admin_section():
     st.markdown("""
     <style>
     .stButton > button {
-        color: white !important;
-        font-weight: bold !important;
+        color: white;
+        font-weight: bold;
     }
     .stButton > button:hover {
-        color: white !important;
+        color: white;
     }
     .stButton > button:focus {
-        color: white !important;
+        color: white;
     }
     .stButton > button:active {
-        color: white !important;
+        color: white;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -508,25 +508,6 @@ def main():
             if st.button("Predecir Cultivo", key="predict_button"):
                 with st.spinner("Procesando predicción..."):
                     handle_prediction(terrain_params)
-        
-        st.markdown("""
-        <style>
-        .stButton > button {
-            width: 100%;
-            color: white !important;
-            font-weight: bold !important;
-        }
-        .stButton > button:hover {
-            color: white !important;
-        }
-        .stButton > button:focus {
-            color: white !important;
-        }
-        .stButton > button:active {
-            color: white !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
         
         with tab2:
             render_new_crop_form()

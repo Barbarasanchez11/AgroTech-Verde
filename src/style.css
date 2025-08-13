@@ -143,8 +143,8 @@ div[data-baseweb="slider"] [class^="css-"][data-testid="stTickBarMax"] {
 
 
 .crop-card:hover {
-    background: linear-gradient(135deg, #f0f8f0 0%, #e8f5e8 100%) !important;
-    border-color: #90EE90 !important;
+    background: linear-gradient(135deg, #f0f8f0 0%, #e8f5e8 100%) ;
+    border-color: #90EE90 ;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(144, 238, 144, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(144, 238, 144, 0.3);
 } 
