@@ -245,3 +245,26 @@ class FirebaseService:
         
         logger.info(f"Statistics retrieved: {stats}")
         return stats 
+
+    @require_initialization
+    def save_prediction(self, terrain_params: Dict[str, Any], predicted_crop: str, confidence: float) -> Dict[str, Any]:
+        try:
+            prediction_data = {
+                **terrain_params,
+                "tipo_de_cultivo": predicted_crop,
+                "confidence": confidence,
+                "timestamp": datetime.now().isoformat(),
+                "prediction_type": "ml_prediction"
+            }
+            
+            doc_id = self.data_access.add_document(prediction_data)
+            if doc_id:
+                logger.info(f"Prediction saved successfully with ID: {doc_id}")
+                return {"success": True, "doc_id": doc_id, "message": "Predicción guardada exitosamente"}
+            else:
+                logger.error("Failed to save prediction")
+                return {"success": False, "error": "No se pudo guardar la predicción"}
+                
+        except Exception as e:
+            logger.error(f"Error saving prediction: {e}")
+            return {"success": False, "error": str(e)} 
