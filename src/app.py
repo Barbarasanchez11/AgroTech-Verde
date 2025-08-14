@@ -55,7 +55,7 @@ def render_sidebar():
         
         if model_info.get("status") == "loaded":
             available_crops = model_info.get("available_crops", [])
-            st.markdown(f"**Cultivos disponibles:** {len(available_crops)}")
+            
         else:
             st.warning("Modelo no cargado")
 
@@ -309,13 +309,8 @@ def render_new_crop_form():
             st.warning("Por favor ingresa el tipo de cultivo")
 
 def render_crops_history():
-<<<<<<< HEAD
     _, firebase_service = init_services()
-=======
-    st.markdown("### Historial de Cultivos")
->>>>>>> 28ccf51fecce4f381e81232b682e26e30c5b6d26
     
-    _, firebase_service, _ = init_services()
     crops_data = firebase_service.get_all_crops()
     
     if crops_data:
@@ -336,11 +331,7 @@ def render_crops_history():
     else:
         st.info("No hay registros de cultivos disponibles.")
 
-<<<<<<< HEAD
 
-
-=======
->>>>>>> 28ccf51fecce4f381e81232b682e26e30c5b6d26
 def main():
     try:
         st.set_page_config(
