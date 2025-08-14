@@ -12,11 +12,11 @@ os.environ['STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION'] = 'true'
 os.environ['STREAMLIT_SERVER_FILE_WATCHER_TYPE'] = 'none'
 os.environ['STREAMLIT_SERVER_RUN_ON_SAVE'] = 'false'
 
-from src.config.config import APP_CONFIG, TERRAIN_PARAMS, SOIL_TYPES, SEASONS, STYLE_FILE
-from src.services.prediction_service import PredictionService
-from src.services.firebase_service import FirebaseService
+from config.config import APP_CONFIG, TERRAIN_PARAMS, SOIL_TYPES, SEASONS, STYLE_FILE
+from services.prediction_service import PredictionService
+from services.firebase_service import FirebaseService
+from utils.validators import DataValidator
 
-from src.utils.validators import DataValidator
 
 logging.basicConfig(
     level=logging.WARNING,
