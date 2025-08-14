@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Tuple
 import unicodedata
+import re
 
 from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer

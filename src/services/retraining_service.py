@@ -1,6 +1,6 @@
-import pandas as pd
 import logging
-from typing import Dict, Any, Tuple
+import pandas as pd
+from typing import Dict, Any
 from pathlib import Path
 
 from src.services.firebase_service import FirebaseService
