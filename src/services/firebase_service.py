@@ -107,26 +107,10 @@ class FirebaseService:
         try:
             crop_data["timestamp"] = datetime.now().isoformat()
             
-            existing_crops = self.get_all_crops()
-            existing_crop_types = set()
-            
-            for crop in existing_crops:
-                crop_type = crop.get("tipo_de_cultivo")
-                if crop_type:
-                    existing_crop_types.add(crop_type.lower())
-            
-            new_crop_type = crop_data.get("tipo_de_cultivo", "").lower()
-            is_new_crop_type = new_crop_type not in existing_crop_types
-            
             doc_id = self.data_access.add_document(crop_data)
             
             if doc_id:
                 logger.info(f"Crop data saved successfully with ID: {doc_id}")
-                
-                if is_new_crop_type:
-                    logger.info(f"New crop type detected: {new_crop_type}. Triggering auto-retraining...")
-                    self._trigger_auto_retraining()
-                
                 return True
             else:
                 logger.error("Failed to save crop data")
@@ -135,23 +119,6 @@ class FirebaseService:
         except Exception as e:
             logger.error(f"Error saving crop data: {e}")
             return False
-    
-    def _trigger_auto_retraining(self):
-        try:
-            from src.services.retraining_service import RetrainingService
-            retraining_service = RetrainingService()
-            
-            if retraining_service.initialize():
-                result = retraining_service.retrain_with_firebase_data()
-                if result["success"]:
-                    logger.info("Auto-retraining completed successfully")
-                else:
-                    logger.warning(f"Auto-retraining failed: {result['message']}")
-            else:
-                logger.warning("Could not initialize retraining service for auto-retraining")
-                
-        except Exception as e:
-            logger.error(f"Error in auto-retraining: {e}")
     
     @require_initialization
     def get_all_crops(self) -> List[Dict[str, Any]]:
