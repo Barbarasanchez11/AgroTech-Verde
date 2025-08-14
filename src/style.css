@@ -30,12 +30,16 @@ button[data-testid="baseButton-secondary"][data-baseweb="button"] {
 
 .stButton > button:hover, 
 .stButton > button:active,
+.stButton > button:focus,
 button[data-testid="baseButton-secondary"]:hover, 
 button[data-testid="baseButton-secondary"]:active,
+button[data-testid="baseButton-secondary"]:focus,
 .stFormSubmitButton > button:hover, 
 .stFormSubmitButton > button:active,
+.stFormSubmitButton > button:focus,
 button[data-testid="baseButton-secondary"][data-baseweb="button"]:hover,
-button[data-testid="baseButton-secondary"][data-baseweb="button"]:active {
+button[data-testid="baseButton-secondary"][data-baseweb="button"]:active,
+button[data-testid="baseButton-secondary"][data-baseweb="button"]:focus {
     background-color: #388E3C;
     color: white;
     border: none;
@@ -72,7 +76,8 @@ button[data-testid="baseButton-secondary"] {
 }
 
 button[data-testid="baseButton-secondary"]:hover,
-button[data-testid="baseButton-secondary"]:active {
+button[data-testid="baseButton-secondary"]:active,
+button[data-testid="baseButton-secondary"]:focus {
     background-color: #388E3C;
     color: white;
     border: none;
@@ -100,8 +105,10 @@ div[data-testid="stButton"] button {
 
 div[data-testid="stButton"] > button:hover,
 div[data-testid="stButton"] > button:active,
+div[data-testid="stButton"] > button:focus,
 div[data-testid="stButton"] button:hover,
-div[data-testid="stButton"] button:active {
+div[data-testid="stButton"] button:active,
+div[data-testid="stButton"] button:focus {
     background-color: #388E3C;
     color: white;
     border: none;
@@ -147,4 +154,37 @@ div[data-baseweb="slider"] [class^="css-"][data-testid="stTickBarMax"] {
     border-color: #90EE90 ;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(144, 238, 144, 0.3);
+} 
+
+
+.stButton > button,
+button[data-testid="baseButton-secondary"],
+.stFormSubmitButton > button,
+button[data-baseweb="button"],
+div[data-testid="stButton"] > button,
+div[data-testid="stButton"] button {
+    color: white !important;
+    font-weight: bold !important;
+}
+
+.stButton > button:hover,
+.stButton > button:active,
+.stButton > button:focus,
+button[data-testid="baseButton-secondary"]:hover,
+button[data-testid="baseButton-secondary"]:active,
+button[data-testid="baseButton-secondary"]:focus,
+.stFormSubmitButton > button:hover,
+.stFormSubmitButton > button:active,
+.stFormSubmitButton > button:focus,
+button[data-baseweb="button"]:hover,
+button[data-baseweb="button"]:active,
+button[data-baseweb="button"]:focus,
+div[data-testid="stButton"] > button:hover,
+div[data-testid="stButton"] > button:active,
+div[data-testid="stButton"] > button:focus,
+div[data-testid="stButton"] button:hover,
+div[data-testid="stButton"] button:active,
+div[data-testid="stButton"] button:focus {
+    color: white !important;
+    font-weight: bold !important;
 } 

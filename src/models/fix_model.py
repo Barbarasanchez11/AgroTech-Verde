@@ -127,9 +127,9 @@ def main():
         
         pipeline, encoder, accuracy = train_clean_model()
         
-        logger.info("✅ Modelo corregido exitosamente!")
-        logger.info(f"📊 Accuracy: {accuracy:.4f}")
-        logger.info(f"🌱 Cultivos soportados: {list(encoder.classes_)}")
+        logger.info("Modelo corregido exitosamente!")
+        logger.info(f"Accuracy: {accuracy:.4f}")
+        logger.info(f" Cultivos soportados: {list(encoder.classes_)}")
         
         return True
         
