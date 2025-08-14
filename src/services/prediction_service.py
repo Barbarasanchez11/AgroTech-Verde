@@ -78,11 +78,22 @@ class PredictionService:
             self.is_loaded = True
             
             logger.info(f"Model automatically retrained with accuracy: {accuracy}")
+            
+            self._reload_models_after_retraining()
             return True
             
         except Exception as e:
             logger.error(f"Error in automatic retraining: {e}")
             return False
+    
+    def _reload_models_after_retraining(self):
+        try:
+            if self.load_models():
+                logger.info("Models reloaded successfully after retraining")
+            else:
+                logger.warning("Failed to reload models after retraining")
+        except Exception as e:
+            logger.error(f"Error reloading models after retraining: {e}")
 
     def predict_crop(self, terrain_params: Dict[str, Any]) -> Tuple[bool, str, Optional[str]]:
         try:
