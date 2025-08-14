@@ -15,7 +15,7 @@ os.environ['STREAMLIT_SERVER_RUN_ON_SAVE'] = 'false'
 from src.config.config import APP_CONFIG, TERRAIN_PARAMS, SOIL_TYPES, SEASONS, STYLE_FILE
 from src.services.prediction_service import PredictionService
 from src.services.firebase_service import FirebaseService
-from src.services.retraining_service import RetrainingService
+
 from src.utils.validators import DataValidator
 
 logging.basicConfig(
@@ -28,13 +28,12 @@ def init_services():
     try:
         prediction_service = PredictionService()
         firebase_service = FirebaseService()
-        retraining_service = RetrainingService()
         prediction_service.load_models()
-        return prediction_service, firebase_service, retraining_service
+        return prediction_service, firebase_service
     except Exception as e:
         logger.error(f"Error initializing services: {e}")
         st.error("Error al inicializar los servicios. Por favor, recarga la página.")
-        return None, None, None
+        return None, None
 
 def load_css():
     try:
@@ -51,7 +50,7 @@ def render_sidebar():
         st.markdown("### Clasificador Inteligente de Cultivos")
         st.markdown("Sistema de recomendación de cultivos basado en condiciones ambientales y del suelo.")
         
-        prediction_service, firebase_service, retraining_service = init_services()
+        prediction_service, firebase_service = init_services()
         model_info = prediction_service.get_model_info()
         
         if model_info.get("status") == "loaded":
@@ -112,9 +111,9 @@ def render_terrain_params():
 
 def handle_prediction(terrain_params: Dict[str, Any]):
     try:
-        prediction_service, firebase_service, retraining_service = init_services()
+        prediction_service, firebase_service = init_services()
         
-        if not all([prediction_service, firebase_service, retraining_service]):
+        if not all([prediction_service, firebase_service]):
             st.error("No se pudieron inicializar los servicios. Por favor, recarga la página.")
             return
         
@@ -125,24 +124,24 @@ def handle_prediction(terrain_params: Dict[str, Any]):
                 st.error(f"- {error}")
             return
         
-        # Mostrar parámetros ingresados
+        
         st.markdown("### Parámetros Ingresados")
         params_df = pd.DataFrame([terrain_params])
         st.dataframe(params_df, use_container_width=True, hide_index=True)
         
-        # Realizar predicción
+       
         prediction_result = prediction_service.predict_crop(terrain_params)
         
-        # prediction_result es una tupla: (success, crop_or_error, error_details)
+    
         success, crop_or_error, error_details = prediction_result
         
         if success:
             crop = crop_or_error
-            confidence = 95.0  # Valor por defecto de confianza
+            confidence = 95.0 
             
-            st.markdown("### 🎯 Resultado de la Predicción")
+            st.markdown("###  Resultado de la Predicción")
             
-            # Crear tarjeta de resultado
+          
             st.markdown(f"""
             <div style="
                 background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
@@ -153,7 +152,7 @@ def handle_prediction(terrain_params: Dict[str, Any]):
                 box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
                 margin: 20px 0;
             ">
-                <h2 style="margin: 0; font-size: 2.5rem;">🌱 {crop.upper()}</h2>
+                <h2 style="margin: 0; font-size: 2.5rem;"> {crop.upper()}</h2>
                 <p style="font-size: 1.2rem; margin: 10px 0;">Cultivo Recomendado</p>
                 <div style="
                     background: rgba(255,255,255,0.2);
@@ -167,7 +166,7 @@ def handle_prediction(terrain_params: Dict[str, Any]):
             </div>
             """, unsafe_allow_html=True)
             
-            # Guardar en Firebase
+          
             try:
                 save_result = firebase_service.save_prediction(terrain_params, crop, confidence)
                 if save_result.get("success"):
@@ -180,8 +179,8 @@ def handle_prediction(terrain_params: Dict[str, Any]):
                 logger.error(f"Error saving to Firebase: {e}")
                 st.warning("La predicción se realizó pero no se pudo guardar en la base de datos")
             
-            # Mostrar información adicional del cultivo
-            st.markdown("### 📊 Información del Cultivo")
+         
+            st.markdown("### Información del Cultivo")
             
             st.markdown(f"""
             <div style="
@@ -301,7 +300,7 @@ def render_new_crop_form():
                 "tipo_de_cultivo": tipo_de_cultivo
             }
             
-            _, firebase_service, _ = init_services()
+            _, firebase_service = init_services()
             if firebase_service.save_crop_data(crop_data):
                 st.success("Cultivo guardado correctamente")
             else:
@@ -310,7 +309,7 @@ def render_new_crop_form():
             st.warning("Por favor ingresa el tipo de cultivo")
 
 def render_crops_history():
-    _, firebase_service, _ = init_services()
+    _, firebase_service = init_services()
     
     crops_data = firebase_service.get_all_crops()
     
@@ -334,141 +333,7 @@ def render_crops_history():
     else:
         st.info("No hay registros de cultivos disponibles.")
 
-def render_admin_section():
-    st.markdown("### Administración del Sistema")
-    
-    st.markdown("""
-    <style>
-    .stButton > button {
-        color: white;
-        font-weight: bold;
-    }
-    .stButton > button:hover {
-        color: white;
-    }
-    .stButton > button:focus {
-        color: white;
-    }
-    .stButton > button:active {
-        color: white;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    _, firebase_service, retraining_service = init_services()
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### Limpiar Registros")
-        st.markdown("Elimina registros con campos vacíos o incompletos")
-        
-        if st.button("Limpiar Registros", help="Elimina registros con campos vacíos", key="btn_limpiar"):
-            with st.spinner("Limpiando registros..."):
-                result = firebase_service.clean_empty_records()
-                
-                if "error" not in result:
-                    st.success(f" Limpieza completada: {result['deleted_records']} registros eliminados")
-                    st.info(f" Registros restantes: {result['remaining_records']}")
-                else:
-                    st.error(f" Error durante la limpieza: {result['error']}")
-    
-    with col2:
-        st.markdown("#### Reentrenar Modelo")
-        st.markdown("Reentrena el modelo con todos los datos de Firebase")
-        
-        if st.button("Reentrenar Modelo", help="Reentrena el modelo con datos de Firebase", key="btn_reentrenar"):
-            with st.spinner("Reentrenando modelo..."):
-                result = retraining_service.retrain_with_firebase_data()
-                
-                if result["success"]:
-                    st.success(f"Modelo reentrenado exitosamente")
-                    st.info(f"📊 Registros utilizados: {result['records_used']}")
-                else:
-                    st.error(f"Error en el reentrenamiento: {result['message']}")
-    
-    st.markdown("#### 📊 Estadísticas de Datos")
-    
-    stats = retraining_service.get_training_stats()
-    
-    if "error" not in stats:
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"""
-            <div style="text-align: center; padding: 15px;">
-                <h3 style="color: #495057; margin: 0; font-size: 1.1rem;">Total de Registros</h3>
-                <p style="color: #28a745; font-size: 2rem; font-weight: bold; margin: 10px 0;">{stats.get("total_records", 0)}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.markdown(f"""
-            <div style="text-align: center; padding: 15px;">
-                <h3 style="color: #495057; margin: 0; font-size: 1.1rem;">Tipos de Cultivo</h3>
-                <p style="color: #28a745; font-size: 2rem; font-weight: bold; margin: 10px 0;">{len(stats.get("crop_distribution", {}))}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        if stats.get("crop_distribution"):
-            st.markdown("""
-            <div style="margin-top: 25px;">
-                <h4 style="color: #495057; margin-bottom: 20px; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
-                    🌱 Distribución de cultivos
-                </h4>
-                <div style="
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 20px;
-                    margin-top: 15px;
-                ">
-            """, unsafe_allow_html=True)
-            
-            for crop, count in stats["crop_distribution"].items():
-                st.markdown(f"""
-                <div class="crop-card" style="
-                    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-                    border: 1px solid #e9ecef;
-                    border-radius: 12px;
-                    padding: 16px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-                    transition: all 0.3s ease;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 12px;
-                    cursor: pointer;
-                ">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="
-                            width: 8px;
-                            height: 8px;
-                            background: #28a745;
-                            border-radius: 50%;
-                            flex-shrink: 0;
-                        "></div>
-                        <span style="
-                            color: #495057; 
-                            font-weight: 600; 
-                            font-size: 1rem;
-                            text-transform: capitalize;
-                        ">{crop}</span>
-                    </div>
-                    <div style="
-                        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                        color: white;
-                        padding: 6px 12px;
-                        border-radius: 20px;
-                        font-size: 0.85rem;
-                        font-weight: bold;
-                        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
-                        min-width: 60px;
-                        text-align: center;
-                    ">{count} registros</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown("</div></div>", unsafe_allow_html=True)
-    else:
-        st.error(f"Error obteniendo estadísticas: {stats['error']}")
+
 
 def main():
     try:
@@ -497,7 +362,7 @@ def main():
         st.title("AgroTech Verde")
         st.markdown("Sistema inteligente de recomendación de cultivos")
         
-        tab1, tab2, tab3, tab4 = st.tabs(["Predicción", "Nuevo Cultivo", "Historial", "Administración"])
+        tab1, tab2, tab3 = st.tabs(["Predicción", "Nuevo Cultivo", "Historial"])
         
         with tab1:
             st.markdown("### Predicción de Cultivos")
@@ -514,9 +379,6 @@ def main():
         
         with tab3:
             render_crops_history()
-        
-        with tab4:
-            render_admin_section()
             
     except Exception as e:
         logger.error(f"Error in main: {e}")
