@@ -31,7 +31,7 @@ def normalize_text(text):
 
 def clean_dataset():
     try:
-        data_path = get_data_path()
+        data_path = get_data_path("agroTech_data.csv")
         if not data_path or not Path(data_path).exists():
             logger.error(f"Data path not found: {data_path}")
             return None
@@ -46,7 +46,7 @@ def clean_dataset():
         df_clean = df[df['tipo_de_cultivo'].isin(expected_crops)].copy()
         
         logger.info(f"Cleaned dataset: {df_clean.shape}")
-        logger.info(f"Unique crops after cleaning: {df_clean['tipo_de_cultivo'].unique()}")
+        logger.info(f"Unique crops after cleaning: {sorted(df_clean['tipo_de_cultivo'].unique())}")
         
         return df_clean
         

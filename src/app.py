@@ -316,6 +316,8 @@ def render_crops_history():
     if crops_data:
         df = pd.DataFrame(crops_data)
         
+        st.markdown("### Historial de Cultivos")
+        
         stats = firebase_service.get_collection_stats()
         if stats:
             col1, col2 = st.columns(2)
@@ -328,6 +330,33 @@ def render_crops_history():
             df.style.background_gradient(cmap='Greens'),
             use_container_width=True
         )
+        
+       
+      
+        st.markdown("---")
+        st.markdown("## Reentrenar Modelo")
+        st.markdown("Actualiza el modelo de predicción incorporando todos los cultivos disponibles en la base de datos para mejorar la precisión de las predicciones futuras.")
+        
+        if st.button("Reentrenar Modelo", type="primary", use_container_width=True):
+            with st.spinner("Reentrenando modelo con todos los datos..."):
+                try:
+                    
+                    from src.models.fix_model import train_clean_model
+                    
+                    pipeline, label_encoder, accuracy = train_clean_model()
+                    
+                    if pipeline and label_encoder:
+                        st.success(f"Modelo reentrenado exitosamente")
+                        st.info(f" Precisión del modelo: {accuracy:.2%}")
+                        st.info("El modelo se ha actualizado con todos los datos disponibles")
+                        
+                            
+                    else:
+                        st.error("Error durante el reentrenamiento del modelo")
+                        
+                except Exception as e:
+                    st.error(f"Error durante el reentrenamiento: {str(e)}")
+                    st.info(" Intenta recargar la página y volver a intentarlo")
     else:
         st.info("No hay registros de cultivos disponibles.")
 
