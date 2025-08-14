@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -30,6 +30,7 @@ ML_CONFIG = {
     "random_state": 42,
     "model_files": {
         "random_forest": "modelo_random_forest.pkl",
+        "svm": "svm.pkl",
         "label_encoder": "label_encoder.pkl"
     }
 }
@@ -46,27 +47,67 @@ VALIDATION_CONFIG = {
                        "precipitacion", "horas_de_sol", "tipo_de_suelo", "temporada"]
 }
 
-def get_model_path(model_name: str) -> Path:
-    if model_name in ML_CONFIG["model_files"]:
-        return MODELS_DIR / ML_CONFIG["model_files"][model_name]
-    else:
-        return MODELS_DIR / f"{model_name}.pkl"
+def get_model_path(model_name: str) -> Optional[Path]:
+    try:
+        MODELS_DIR.mkdir(parents=True, exist_ok=True)
+        
+        if model_name in ML_CONFIG["model_files"]:
+            model_path = MODELS_DIR / ML_CONFIG["model_files"][model_name]
+        else:
+            filename = f"{model_name}.pkl" if not model_name.endswith('.pkl') else model_name
+            model_path = MODELS_DIR / filename
+        
+        return model_path
+        
+    except Exception as e:
+        print(f"Error getting model path for {model_name}: {e}")
+        return None
 
 def get_data_path(filename: str) -> Path:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     return DATA_DIR / filename
 
 def validate_environment() -> bool:
-    required_dirs = [DATA_DIR, MODELS_DIR]
-    required_files = [STYLE_FILE]
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        MODELS_DIR.mkdir(parents=True, exist_ok=True)
+        
+        if not STYLE_FILE.exists():
+            print(f"Warning: Style file not found: {STYLE_FILE}")
+            try:
+                STYLE_FILE.parent.mkdir(parents=True, exist_ok=True)
+                with open(STYLE_FILE, 'w') as f:
+                    f.write("/* AgroTech Verde Styles */\n")
+                print(f"Created basic style file: {STYLE_FILE}")
+            except Exception as e:
+                print(f"Could not create style file: {e}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error validating environment: {e}")
+        return False
+
+def get_model_info() -> Dict[str, Any]:
+    info = {
+        "models_dir": str(MODELS_DIR),
+        "available_models": {},
+        "missing_models": []
+    }
     
-    for dir_path in required_dirs:
-        if not dir_path.exists():
-            print(f"Required directory not found: {dir_path}")
-            return False
+    for model_name, filename in ML_CONFIG["model_files"].items():
+        model_path = get_model_path(model_name)
+        if model_path and model_path.exists():
+            info["available_models"][model_name] = {
+                "path": str(model_path),
+                "size": model_path.stat().st_size if model_path.exists() else 0,
+                "exists": True
+            }
+        else:
+            info["missing_models"].append(model_name)
+            info["available_models"][model_name] = {
+                "path": str(model_path) if model_path else "unknown",
+                "exists": False
+            }
     
-    for file_path in required_files:
-        if not file_path.exists():
-            print(f"Required file not found: {file_path}")
-            return False
-    
-    return True 
+    return info 
