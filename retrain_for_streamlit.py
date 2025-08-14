@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -31,7 +35,7 @@ def normalize_text(text):
 
 def clean_dataset():
     try:
-        data_path = get_data_path()
+        data_path = get_data_path("agroTech_data.csv")
         if not data_path or not Path(data_path).exists():
             logger.error(f"Data path not found: {data_path}")
             return None
@@ -54,7 +58,7 @@ def clean_dataset():
         logger.error(f"Error cleaning dataset: {e}")
         return None
 
-def train_clean_model():
+def train_compatible_model():
     try:
         df_clean = clean_dataset()
         if df_clean is None or df_clean.empty:
@@ -84,12 +88,10 @@ def train_clean_model():
                 ('cat', categorical_transformer, categorical_columns)
             ])
         
+        # Usar RandomForestClassifier sin parámetros avanzados para compatibilidad
         model = RandomForestClassifier(
             n_estimators=100,
-            random_state=42,
-            max_depth=10,
-            min_samples_split=5,
-            min_samples_leaf=2
+            random_state=42
         )
         
         pipeline = Pipeline(steps=[
@@ -105,36 +107,52 @@ def train_clean_model():
         label_encoder = LabelEncoder()
         label_encoder.fit(y)
         
-        logger.info(f"Model trained successfully with accuracy: {accuracy:.4f}")
+        logger.info(f"Compatible model trained successfully with accuracy: {accuracy:.4f}")
         logger.info(f"Label encoder classes: {list(label_encoder.classes_)}")
         
         return pipeline, label_encoder, accuracy
         
     except Exception as e:
-        logger.error(f"Error training clean model: {e}")
+        logger.error(f"Error training compatible model: {e}")
         return None, None, 0.0
 
+def save_model(pipeline, label_encoder):
+    try:
+        model_path = get_model_path("random_forest")
+        encoder_path = get_model_path("label_encoder")
+        
+        if model_path and encoder_path:
+            with open(model_path, 'wb') as f:
+                pickle.dump(pipeline, f)
+            
+            with open(encoder_path, 'wb') as f:
+                pickle.dump(label_encoder, f)
+            
+            logger.info(f"Model and encoder saved successfully")
+            return True
+        else:
+            logger.error("Model paths not configured")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error saving model: {e}")
+        return False
+
 if __name__ == "__main__":
-    pipeline, label_encoder, accuracy = train_clean_model()
+    print("🔄 Reentrenando modelo para compatibilidad con Streamlit Cloud...")
+    
+    pipeline, label_encoder, accuracy = train_compatible_model()
     
     if pipeline and label_encoder:
-        try:
-            model_path = get_model_path("random_forest")
-            encoder_path = get_model_path("label_encoder")
-            
-            if model_path and encoder_path:
-                with open(model_path, 'wb') as f:
-                    pickle.dump(pipeline, f)
-                
-                with open(encoder_path, 'wb') as f:
-                    pickle.dump(label_encoder, f)
-                
-                logger.info(f"Model and encoder saved successfully")
-                logger.info(f"Model accuracy: {accuracy:.4f}")
-            else:
-                logger.error("Model paths not configured")
-                
-        except Exception as e:
-            logger.error(f"Error saving model: {e}")
+        if save_model(pipeline, label_encoder):
+            print(f"✅ Modelo reentrenado exitosamente")
+            print(f"📊 Precisión: {accuracy:.4f}")
+            print(f"🌱 Cultivos disponibles: {list(label_encoder.classes_)}")
+            print("\n🚀 Ahora haz push del modelo actualizado:")
+            print("git add src/models/")
+            print("git commit -m 'feat: retrain model for Streamlit Cloud compatibility'")
+            print("git push origin main")
+        else:
+            print("❌ Error al guardar el modelo")
     else:
-        logger.error("Failed to train model") 
+        print("❌ Error al reentrenar el modelo") 
