@@ -54,7 +54,7 @@ def render_sidebar():
         
         if model_info.get("status") == "loaded":
             available_crops = model_info.get("available_crops", [])
-            st.markdown(f"**Cultivos disponibles:** {len(available_crops)}")
+           
         else:
             st.warning("Modelo no cargado")
 
