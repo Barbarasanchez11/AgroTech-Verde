@@ -331,8 +331,6 @@ def render_crops_history():
             use_container_width=True
         )
         
-       
-      
         st.markdown("---")
         st.markdown("## Reentrenar Modelo")
         st.markdown("Actualiza el modelo de predicción incorporando todos los cultivos disponibles en la base de datos para mejorar la precisión de las predicciones futuras.")
