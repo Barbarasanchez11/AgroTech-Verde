@@ -364,6 +364,7 @@ def render_crops_history():
         
         st.markdown("---")
         st.markdown("## Estado del Sistema de Reentrenamiento")
+        st.caption("Sistema inteligente de normalización y reentrenamiento")
         
         try:
             from src.services.smart_retraining_service import SmartRetrainingService
