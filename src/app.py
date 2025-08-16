@@ -364,8 +364,7 @@ def render_crops_history():
         
         st.markdown("---")
         st.markdown("## Estado del Sistema de Reentrenamiento")
-        st.caption("Sistema inteligente de normalización y reentrenamiento")
-        st.info("🔄 Verificando estado del sistema...")
+        st.markdown("---")
         
         try:
             from src.services.smart_retraining_service import SmartRetrainingService
@@ -373,18 +372,14 @@ def render_crops_history():
             status = smart_service.get_retraining_status()
             
             if not status.get("error"):
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 with col1:
                     st.metric("Ejemplos Disponibles", status['total_examples'])
                 with col2:
                     st.metric("Cultivos Únicos", len(status['available_crops']))
-                with col3:
-                    can_retrain = status['can_retrain']
-                    st.metric("Estado Reentrenamiento", 
-                             "✅ Listo" if can_retrain else "⏳ Necesita más datos")
-                    
-                    if not can_retrain:
-                        st.caption(f"Se necesitan al menos 5 ejemplos (actual: {status['total_examples']})")
+                
+                if not status['can_retrain']:
+                    st.warning(f"Se necesitan al menos 5 ejemplos para reentrenar. Agrega más cultivos con diferentes parámetros.")
                 
                 if status['available_crops']:
                     try:
@@ -404,7 +399,6 @@ def render_crops_history():
                             
                             if unique_original > unique_normalized:
                                 st.success(f"✅ Sistema de limpieza activo: {unique_original} nombres → {unique_normalized} únicos")
-                                st.info(f"💡 Se eliminaron {unique_original - unique_normalized} duplicados automáticamente")
                             else:
                                 st.info(f"📊 {unique_normalized} cultivos únicos")
                     except Exception as e:
