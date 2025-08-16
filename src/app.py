@@ -408,14 +408,16 @@ def render_crops_history():
                                 st.info(f"📊 {unique_normalized} cultivos únicos")
                     except Exception as e:
                         st.info(f"Cultivos disponibles: {', '.join(status['available_crops'])}")
+                        st.error(f"Error en normalización: {str(e)}")
                 
                 if not status['can_retrain']:
                     st.warning(f"Se necesitan al menos 5 ejemplos para reentrenar. Agrega más cultivos con diferentes parámetros.")
             else:
-                st.warning("No se pudo obtener el estado del sistema")
+                st.error(f"Error en servicio: {status.get('error')}")
                 
         except Exception as e:
-            st.warning("Error obteniendo estado del sistema")
+            st.error(f"Error obteniendo estado del sistema: {str(e)}")
+            st.exception(e)
         
         st.markdown("---")
         st.markdown("## Reentrenar Modelo")
