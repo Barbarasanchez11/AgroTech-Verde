@@ -286,25 +286,56 @@ def render_new_crop_form():
         tipo_de_suelo = st.selectbox("Tipo de suelo", SOIL_TYPES, key="new_tipo_de_suelo")
         temporada = st.selectbox("Temporada", SEASONS, key="new_temporada")
         tipo_de_cultivo = st.text_input("Tipo de cultivo", key="new_tipo_de_cultivo")
+        
+        # Validación en tiempo real del nombre del cultivo
+        if tipo_de_cultivo:
+            try:
+                from src.services.crop_normalizer import CropNormalizer
+                normalizer = CropNormalizer()
+                validation = normalizer.validate_crop_name(tipo_de_cultivo)
+                
+                if validation["is_valid"]:
+                    if validation["needs_normalization"]:
+                        st.info(f"ℹ️ {validation['message']}")
+                        if validation["suggestions"]:
+                            st.info(f"Sugerencias: {', '.join(validation['suggestions'])}")
+                    else:
+                        st.success("✅ Nombre válido")
+                else:
+                    st.error(f"❌ {validation['error']}")
+                    
+            except Exception as e:
+                st.warning("No se pudo validar el nombre del cultivo")
     
     if st.button("Guardar Cultivo"):
         if tipo_de_cultivo:
-            crop_data = {
-                "ph": ph,
-                "humedad": humedad,
-                "temperatura": temperatura,
-                "precipitacion": precipitacion,
-                "horas_de_sol": horas_de_sol,
-                "tipo_de_suelo": tipo_de_suelo,
-                "temporada": temporada,
-                "tipo_de_cultivo": tipo_de_cultivo
-            }
-            
-            _, firebase_service = init_services()
-            if firebase_service.save_crop_data(crop_data):
-                st.success("Cultivo guardado correctamente")
-            else:
-                st.error("Error al guardar el cultivo")
+            try:
+                from src.services.crop_normalizer import CropNormalizer
+                normalizer = CropNormalizer()
+                normalized_name = normalizer.normalize_crop_name(tipo_de_cultivo)
+                
+                crop_data = {
+                    "ph": ph,
+                    "humedad": humedad,
+                    "temperatura": temperatura,
+                    "precipitacion": precipitacion,
+                    "horas_de_sol": horas_de_sol,
+                    "tipo_de_suelo": tipo_de_suelo,
+                    "temporada": temporada,
+                    "tipo_de_cultivo": normalized_name
+                }
+                
+                _, firebase_service = init_services()
+                if firebase_service.save_crop_data(crop_data):
+                    if normalized_name != tipo_de_cultivo:
+                        st.success(f"Cultivo guardado correctamente como '{normalized_name}'")
+                        st.info(f"El nombre se normalizó de '{tipo_de_cultivo}' a '{normalized_name}'")
+                    else:
+                        st.success("Cultivo guardado correctamente")
+                else:
+                    st.error("Error al guardar el cultivo")
+            except Exception as e:
+                st.error(f"Error al procesar el cultivo: {str(e)}")
         else:
             st.warning("Por favor ingresa el tipo de cultivo")
 
@@ -332,29 +363,109 @@ def render_crops_history():
         )
         
         st.markdown("---")
+        st.markdown("## Estado del Sistema de Reentrenamiento")
+        
+        try:
+            from src.services.smart_retraining_service import SmartRetrainingService
+            smart_service = SmartRetrainingService(firebase_service)
+            status = smart_service.get_retraining_status()
+            
+            if not status.get("error"):
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Ejemplos Disponibles", status['total_examples'])
+                with col2:
+                    st.metric("Cultivos Únicos", len(status['available_crops']))
+                with col3:
+                    can_retrain = status['can_retrain']
+                    st.metric("Estado Reentrenamiento", 
+                             "✅ Listo" if can_retrain else "⏳ Necesita más datos")
+                    
+                    if not can_retrain:
+                        st.caption(f"Se necesitan al menos 5 ejemplos (actual: {status['total_examples']})")
+                
+                if status['available_crops']:
+                    try:
+                        from src.services.crop_normalizer import CropNormalizer
+                        normalizer = CropNormalizer()
+                        
+                        # Mostrar cultivos normalizados
+                        normalized_crops = sorted(status['available_crops'])
+                        st.info(f"Cultivos disponibles ({len(normalized_crops)}): {', '.join(normalized_crops)}")
+                        
+                        # Mostrar estadísticas de normalización
+                        all_crops = firebase_service.get_all_crops()
+                        if all_crops:
+                            original_names = [crop['tipo_de_cultivo'] for crop in all_crops]
+                            unique_original = len(set(original_names))
+                            unique_normalized = len(normalized_crops)
+                            
+                            if unique_original > unique_normalized:
+                                st.success(f"✅ Sistema de limpieza activo: {unique_original} nombres → {unique_normalized} únicos")
+                                st.info(f"💡 Se eliminaron {unique_original - unique_normalized} duplicados automáticamente")
+                            else:
+                                st.info(f"📊 {unique_normalized} cultivos únicos")
+                    except Exception as e:
+                        st.info(f"Cultivos disponibles: {', '.join(status['available_crops'])}")
+                
+                if not status['can_retrain']:
+                    st.warning(f"Se necesitan al menos 5 ejemplos para reentrenar. Agrega más cultivos con diferentes parámetros.")
+            else:
+                st.warning("No se pudo obtener el estado del sistema")
+                
+        except Exception as e:
+            st.warning("Error obteniendo estado del sistema")
+        
+        st.markdown("---")
         st.markdown("## Reentrenar Modelo")
         st.markdown("Actualiza el modelo de predicción incorporando todos los cultivos disponibles en la base de datos para mejorar la precisión de las predicciones futuras.")
         
         if st.button("Reentrenar Modelo", type="primary", use_container_width=True):
             with st.spinner("Reentrenando modelo con todos los datos..."):
                 try:
+                    from src.services.smart_retraining_service import SmartRetrainingService
                     
-                    from src.models.fix_model import train_clean_model
+                    smart_service = SmartRetrainingService(firebase_service)
                     
-                    pipeline, label_encoder, accuracy = train_clean_model()
+                    # Mostrar estado actual
+                    status = smart_service.get_retraining_status()
+                    if status.get("error"):
+                        st.error(f"Error obteniendo estado: {status['error']}")
+                        return
                     
-                    if pipeline and label_encoder:
-                        st.success(f"Modelo reentrenado exitosamente")
-                        st.info(f" Precisión del modelo: {accuracy:.2%}")
-                        st.info("El modelo se ha actualizado con todos los datos disponibles")
+                    st.info(f"Estado actual: {status['total_examples']} ejemplos de {len(status['available_crops'])} cultivos")
+                    
+                    if not status['can_retrain']:
+                        st.warning(f"Se necesitan al menos 5 ejemplos para reentrenar. Actualmente tienes {status['total_examples']}")
+                        st.info("Agrega más cultivos con diferentes parámetros para mejorar el modelo")
+                        return
+                    
+                    # Ejecutar reentrenamiento inteligente
+                    result = smart_service.retrain_with_new_data(min_examples=5)
+                    
+                    if result['success']:
+                        st.success("Modelo reentrenado exitosamente con nuevos datos")
                         
-                            
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Precisión", f"{result['accuracy']:.2%}")
+                        with col2:
+                            st.metric("Total Registros", result['total_records'])
+                        with col3:
+                            st.metric("Cultivos", len(result['crop_classes']))
+                        
+                        st.info(f"Precisión con validación cruzada: {result['cv_accuracy']:.2%}")
+                        st.info(f"Nuevos cultivos incorporados: {result['new_crops_added']}")
+                        st.info(f"Cultivos disponibles: {', '.join(result['crop_classes'])}")
+                        
+                        st.success("El modelo ahora reconoce todos los cultivos introducidos")
+                        
                     else:
-                        st.error("Error durante el reentrenamiento del modelo")
+                        st.error(f"Error durante el reentrenamiento: {result['error']}")
                         
                 except Exception as e:
                     st.error(f"Error durante el reentrenamiento: {str(e)}")
-                    st.info(" Intenta recargar la página y volver a intentarlo")
+                    st.info("Intenta recargar la página y volver a intentarlo")
     else:
         st.info("No hay registros de cultivos disponibles.")
 
