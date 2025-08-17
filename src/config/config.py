@@ -30,7 +30,7 @@ ML_CONFIG = {
     "random_state": 42,
     "model_files": {
         "random_forest": "modelo_random_forest.pkl",
-        "svm": "svm.pkl",
+        "svm": "svm.pkl",  
         "label_encoder": "label_encoder.pkl"
     }
 }
@@ -87,7 +87,7 @@ def validate_environment() -> bool:
     except Exception as e:
         print(f"Error validating environment: {e}")
         return False
-
+    
 def get_model_info() -> Dict[str, Any]:
     info = {
         "models_dir": str(MODELS_DIR),

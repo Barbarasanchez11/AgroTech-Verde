@@ -1,11 +1,15 @@
+import os
 import pickle
-import pandas as pd
-from typing import Dict, Any, Optional, Tuple
 import logging
-from pathlib import Path
+import warnings
+from typing import Dict, Any, Tuple, Optional
+import pandas as pd
+import numpy as np
 import sklearn
+from pathlib import Path
 
-logging.basicConfig(level=logging.INFO)
+warnings.filterwarnings('ignore')
+
 logger = logging.getLogger(__name__)
 
 class PredictionService:
@@ -13,20 +17,24 @@ class PredictionService:
         self.model = None
         self.label_encoder = None
         self.is_loaded = False
-        logger.info(f"Scikit-learn version: {sklearn.__version__}")
-
+        self.load_models()
+    
     def load_models(self) -> bool:
         try:
-            from src.config.config import get_model_path
+            from config.config import get_model_path
             
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")
             
-            if not model_path or not Path(model_path).exists():
+            if not model_path or not encoder_path:
+                logger.error("Model or encoder path not found")
+                return False
+            
+            if not model_path.exists():
                 logger.error(f"Model path does not exist: {model_path}")
                 return False
                 
-            if not encoder_path or not Path(encoder_path).exists():
+            if not encoder_path.exists():
                 logger.error(f"Encoder path does not exist: {encoder_path}")
                 return False
             
@@ -57,7 +65,7 @@ class PredictionService:
 
     def predict_crop(self, terrain_params: Dict[str, Any]) -> Tuple[bool, str, Optional[str]]:
         try:
-            from src.utils.validators import DataValidator
+            from utils.validators import DataValidator
             
             is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
             if not is_valid:
@@ -113,7 +121,7 @@ class PredictionService:
             return {"status": "not_loaded"}
         
         try:
-            from src.config.config import get_model_path
+            from config.config import get_model_path
             
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")
@@ -127,14 +135,15 @@ class PredictionService:
             }
             
             if self.label_encoder and hasattr(self.label_encoder, 'classes_'):
-                info["available_crops"] = list(self.label_encoder.classes_)
-                info["num_crops"] = len(self.label_encoder.classes_)
+                info["available_crops"] = self.label_encoder.classes_.tolist()
+            else:
+                info["available_crops"] = []
             
             return info
             
         except Exception as e:
             logger.error(f"Error getting model info: {e}")
-            return {"status": "error", "message": str(e)}
+            return {"status": "error", "error": str(e)} 
 
     def reload_models(self) -> bool:
         logger.info("Reloading models...")

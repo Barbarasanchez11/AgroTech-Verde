@@ -105,20 +105,20 @@ class FirebaseService:
     @require_initialization
     def save_crop_data(self, crop_data: Dict[str, Any]) -> bool:
         try:
-            crop_data["timestamp"] = datetime.now().isoformat()
+        crop_data["timestamp"] = datetime.now().isoformat()
+        
+        doc_id = self.data_access.add_document(crop_data)
             
-            doc_id = self.data_access.add_document(crop_data)
-            
-            if doc_id:
+        if doc_id:
                 logger.info(f"Crop data saved successfully with ID: {doc_id}")
-                return True
+            return True
             else:
                 logger.error("Failed to save crop data")
                 return False
                 
         except Exception as e:
             logger.error(f"Error saving crop data: {e}")
-            return False
+        return False
     
     @require_initialization
     def get_all_crops(self) -> List[Dict[str, Any]]:

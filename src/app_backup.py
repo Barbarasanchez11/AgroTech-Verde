@@ -17,6 +17,7 @@ from services.prediction_service import PredictionService
 from services.supabase_service import SupabaseService
 from utils.validators import DataValidator
 
+
 logging.basicConfig(
     level=logging.WARNING,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -26,9 +27,9 @@ logger = logging.getLogger(__name__)
 def init_services():
     try:
         prediction_service = PredictionService()
-        database_service = SupabaseService()
+        supabase_service = SupabaseService()
         prediction_service.load_models()
-        return prediction_service, database_service
+        return prediction_service, supabase_service
     except Exception as e:
         logger.error(f"Error initializing services: {e}")
         st.error("Error al inicializar los servicios. Por favor, recarga la página.")
@@ -49,11 +50,12 @@ def render_sidebar():
         st.markdown("### Clasificador Inteligente de Cultivos")
         st.markdown("Sistema de recomendación de cultivos basado en condiciones ambientales y del suelo.")
         
-        prediction_service, database_service = init_services()
+        prediction_service, supabase_service = init_services()
         model_info = prediction_service.get_model_info()
         
         if model_info.get("status") == "loaded":
             available_crops = model_info.get("available_crops", [])
+            
         else:
             st.warning("Modelo no cargado")
 
@@ -109,19 +111,19 @@ def render_terrain_params():
 
 def handle_prediction(terrain_params: Dict[str, Any]):
     try:
-        prediction_service, database_service = init_services()
+        prediction_service, supabase_service = init_services()
         
-        if not all([prediction_service, database_service]):
+        if not all([prediction_service, supabase_service]):
             st.error("No se pudieron inicializar los servicios. Por favor, recarga la página.")
             return
-        
-        is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
-        if not is_valid:
+    
+    is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
+    if not is_valid:
             st.error("Parámetros inválidos:")
             for error in errors:
                 st.error(f"- {error}")
-            return
-        
+        return
+    
         st.markdown("### Parámetros Ingresados")
         params_df = pd.DataFrame([terrain_params])
         st.dataframe(params_df, use_container_width=True, hide_index=True)
@@ -161,19 +163,16 @@ def handle_prediction(terrain_params: Dict[str, Any]):
             """, unsafe_allow_html=True)
             
             try:
-                save_result = database_service.save_prediction(terrain_params, crop, confidence)
+                save_result = supabase_service.save_prediction(terrain_params, crop, confidence)
                 if save_result.get("success"):
                     st.success(f"**{crop.upper()}** recomendado y guardado exitosamente!")
                     st.info(f"**Cultivo:** {crop.capitalize()} | **Confianza:** {confidence:.1f}% | **Guardado en base de datos**")
                     st.success("**Consejo:** Consulta tu historial de predicciones en la pestaña 'Historial' para ver todas tus recomendaciones anteriores.")
-                    
-                    st.balloons()
-                    st.info("🎯 **Predicción guardada en Supabase** - Ahora aparece en tu historial")
                 else:
-                    st.error(f"❌ **Error al guardar:** {save_result.get('error', 'Error desconocido')}")
+                    st.warning("La predicción se realizó pero no se pudo guardar en la base de datos")
             except Exception as e:
                 logger.error(f"Error saving to Supabase: {e}")
-                st.error("❌ **Error al guardar la predicción** - Intenta nuevamente")
+                st.warning("La predicción se realizó pero no se pudo guardar en la base de datos")
             
             st.markdown("### Información del Cultivo")
             
@@ -287,56 +286,48 @@ def render_new_crop_form():
                 normalizer = CropNormalizer()
                 normalized_name = normalizer.normalize_crop_name(tipo_de_cultivo)
                 
-                crop_data = {
-                    "ph": ph,
-                    "humedad": humedad,
-                    "temperatura": temperatura,
-                    "precipitacion": precipitacion,
-                    "horas_de_sol": horas_de_sol,
-                    "tipo_de_suelo": tipo_de_suelo,
-                    "temporada": temporada,
+            crop_data = {
+                "ph": ph,
+                "humedad": humedad,
+                "temperatura": temperatura,
+                "precipitacion": precipitacion,
+                "horas_de_sol": horas_de_sol,
+                "tipo_de_suelo": tipo_de_suelo,
+                "temporada": temporada,
                     "tipo_de_cultivo": normalized_name
                 }
                 
-                _, database_service = init_services()
-                if database_service.save_crop_data(crop_data):
+                _, supabase_service = init_services()
+                if supabase_service.save_crop_data(crop_data):
                     if normalized_name != tipo_de_cultivo:
                         st.success(f"Cultivo guardado correctamente como '{normalized_name}'")
                         st.info(f"El nombre se normalizó de '{tipo_de_cultivo}' a '{normalized_name}'")
                     else:
-                        st.success("Cultivo guardado correctamente")
-                else:
-                    st.error("Error al guardar el cultivo")
+                st.success("Cultivo guardado correctamente")
+            else:
+                st.error("Error al guardar el cultivo")
             except Exception as e:
                 st.error(f"Error al procesar el cultivo: {str(e)}")
         else:
             st.warning("Por favor ingresa el tipo de cultivo")
 
 def render_crops_history():
-    _, database_service = init_services()
+    _, supabase_service = init_services()
     
-    if not database_service:
-        st.error("Servicio de base de datos no disponible")
-        st.info("Verificar configuración de Supabase en los secretos de Streamlit")
-        return
-    
-    crops_data = database_service.get_all_crops()
+    crops_data = supabase_service.get_all_crops()
     
     if crops_data:
         df = pd.DataFrame(crops_data)
         
         st.markdown("### Historial de Cultivos")
         
-        stats = database_service.get_collection_stats()
+        stats = supabase_service.get_collection_stats()
         if stats:
-            col1, col2, col3 = st.columns(3)
+            col1, col2 = st.columns(2)
             with col1:
                 st.metric("Total Registros", stats.get("total_records", 0))
             with col2:
                 st.metric("Tipos de Cultivo", stats.get("unique_crops", 0))
-            with col3:
-                predictions = [crop for crop in crops_data if crop.get('is_prediction', False)]
-                st.metric("Predicciones Guardadas", len(predictions))
         
         st.dataframe(
             df.style.background_gradient(cmap='Greens'),
@@ -349,12 +340,12 @@ def render_crops_history():
     
         try:
             from services.smart_retraining_service import SmartRetrainingService
-            smart_service = SmartRetrainingService(database_service)
+            smart_service = SmartRetrainingService(supabase_service)
             status = smart_service.get_retraining_status()
     
             if not status.get("error"):
-                col1, col2 = st.columns(2)
-                with col1:
+    col1, col2 = st.columns(2)
+    with col1:
                     st.metric("Ejemplos Disponibles", status['total_examples'])
                 with col2:
                     st.metric("Cultivos Únicos", len(status['available_crops']))
@@ -372,7 +363,7 @@ def render_crops_history():
                         st.info(f"Cultivos disponibles ({len(normalized_crops)}): {', '.join(normalized_crops)}")
                         
                         # Mostrar estadísticas de normalización
-                        all_crops = database_service.get_all_crops()
+                        all_crops = supabase_service.get_all_crops()
                         if all_crops:
                             original_names = [crop['tipo_de_cultivo'] for crop in all_crops]
                             unique_original = len(set(original_names))
@@ -385,7 +376,7 @@ def render_crops_history():
                     except Exception as e:
                         st.info(f"Cultivos disponibles: {', '.join(status['available_crops'])}")
                         st.error(f"Error en normalización: {str(e)}")
-            else:
+                else:
                 st.error(f"Error en servicio: {status.get('error')}")
                 
         except Exception as e:
@@ -401,7 +392,7 @@ def render_crops_history():
                 try:
                     from services.smart_retraining_service import SmartRetrainingService
                     
-                    smart_service = SmartRetrainingService(database_service)
+                    smart_service = SmartRetrainingService(supabase_service)
                     
                     # Mostrar estado actual
                     status = smart_service.get_retraining_status()
@@ -416,16 +407,16 @@ def render_crops_history():
                         st.info("Agrega más cultivos con diferentes parámetros para mejorar el modelo")
                         return
                     
-                   
+                    # Ejecutar reentrenamiento inteligente
                     result = smart_service.retrain_with_new_data(min_examples=5)
                     
                     if result['success']:
                         st.success("Modelo reentrenado exitosamente con nuevos datos")
                         
                         col1, col2, col3 = st.columns(3)
-                        with col1:
+        with col1:
                             st.metric("Precisión", f"{result['accuracy']:.2%}")
-                        with col2:
+        with col2:
                             st.metric("Total Registros", result['total_records'])
                         with col3:
                             st.metric("Cultivos", len(result['crop_classes']))
@@ -444,6 +435,7 @@ def render_crops_history():
                     st.info("Intenta recargar la página y volver a intentarlo")
     else:
         st.info("No hay registros de cultivos disponibles.")
+
 
 def main():
     try:
@@ -465,31 +457,31 @@ def main():
         </style>
         """, unsafe_allow_html=True)
         
-        load_css()
-        
-        render_sidebar()
-        
+    load_css()
+    
+    render_sidebar()
+    
         st.title("AgroTech Verde")
-        st.markdown("Sistema inteligente de recomendación de cultivos")
-        
+    st.markdown("Sistema inteligente de recomendación de cultivos")
+    
         tab1, tab2, tab3 = st.tabs(["Predicción", "Nuevo Cultivo", "Historial"])
+    
+    with tab1:
+        st.markdown("### Predicción de Cultivos")
+        st.markdown("Ingresa los parámetros del terreno para obtener una recomendación de cultivo.")
         
-        with tab1:
-            st.markdown("### Predicción de Cultivos")
-            st.markdown("Ingresa los parámetros del terreno para obtener una recomendación de cultivo.")
-            
-            terrain_params = render_terrain_params()
-            
+        terrain_params = render_terrain_params()
+        
             if st.button("Predecir Cultivo", key="predict_button"):
                 with st.spinner("Procesando predicción..."):
-                    handle_prediction(terrain_params)
-        
-        with tab2:
-            render_new_crop_form()
-        
-        with tab3:
-            render_crops_history()
-        
+            handle_prediction(terrain_params)
+    
+    with tab2:
+        render_new_crop_form()
+    
+    with tab3:
+        render_crops_history()
+    
     except Exception as e:
         logger.error(f"Error in main: {e}")
         st.error("Ha ocurrido un error inesperado. Por favor, recarga la página.")
