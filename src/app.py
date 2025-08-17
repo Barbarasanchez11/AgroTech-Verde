@@ -28,6 +28,15 @@ def init_services():
         prediction_service = PredictionService()
         database_service = SupabaseService()
         prediction_service.load_models()
+        
+        # Cargar datos iniciales del CSV si la base de datos está vacía
+        try:
+            load_result = database_service.load_initial_data_from_csv()
+            if load_result.get("success") and load_result.get("loaded", 0) > 0:
+                st.success(f"✅ Datos iniciales cargados: {load_result['loaded']} cultivos del CSV original")
+        except Exception as e:
+            logger.warning(f"No se pudieron cargar datos iniciales: {e}")
+        
         return prediction_service, database_service
     except Exception as e:
         logger.error(f"Error initializing services: {e}")
@@ -380,8 +389,6 @@ def render_crops_history():
                             
                             if unique_original > unique_normalized:
                                 st.success(f"✅ Sistema de limpieza activo: {unique_original} nombres → {unique_normalized} únicos")
-                            else:
-                                st.info(f"📊 {unique_normalized} cultivos únicos")
                     except Exception as e:
                         st.info(f"Cultivos disponibles: {', '.join(status['available_crops'])}")
                         st.error(f"Error en normalización: {str(e)}")

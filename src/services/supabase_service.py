@@ -137,7 +137,8 @@ class SupabaseService:
                 logger.error(f"No se pudo inicializar Supabase: {self._initialization_error}")
                 return []
             
-            result = self.supabase.table('crops').select('*').order('created_at', desc=True).execute()
+            # Seleccionar todas las columnas EXCEPTO is_prediction (solo para desarrolladores)
+            result = self.supabase.table('crops').select('id, ph, humedad, temperatura, precipitacion, horas_de_sol, tipo_de_suelo, temporada, tipo_de_cultivo, created_at, confidence').order('created_at', desc=True).execute()
             
             if result.data:
                 logger.info(f"✅ Obtenidos {len(result.data)} cultivos de Supabase")
@@ -221,3 +222,73 @@ class SupabaseService:
                 "error": str(e),
                 "message": "Error probando conexión"
             } 
+    
+    def load_initial_data_from_csv(self) -> Dict[str, Any]:
+        """Carga datos iniciales del CSV original si la base de datos está vacía"""
+        try:
+            if not self._ensure_initialized():
+                return {"success": False, "error": "No se pudo inicializar Supabase"}
+            
+            # Verificar si ya hay datos
+            existing_data = self.supabase.table('crops').select('id').limit(1).execute()
+            if existing_data.data and len(existing_data.data) > 0:
+                logger.info("✅ Base de datos ya tiene datos, no se cargan datos iniciales")
+                return {"success": True, "message": "Base de datos ya tiene datos", "loaded": 0}
+            
+            # Cargar datos del CSV
+            import pandas as pd
+            import os
+            from pathlib import Path
+            
+            # Ruta al CSV (desde la raíz del proyecto)
+            csv_path = Path(__file__).parent.parent.parent / "data" / "agroTech_data.csv"
+            
+            if not csv_path.exists():
+                return {"success": False, "error": f"Archivo CSV no encontrado en {csv_path}"}
+            
+            # Leer CSV
+            df = pd.read_csv(csv_path)
+            logger.info(f"📊 CSV cargado: {len(df)} registros")
+            
+            # Preparar datos para inserción
+            crops_to_insert = []
+            for _, row in df.iterrows():
+                crop_data = {
+                    "ph": float(row['ph']),
+                    "humedad": float(row['humedad']),
+                    "temperatura": float(row['temperatura']),
+                    "precipitacion": float(row['precipitacion']),
+                    "horas_de_sol": float(row['horas_de_sol']),
+                    "tipo_de_suelo": str(row['tipo_de_suelo']),
+                    "temporada": str(row['temporada']),
+                    "tipo_de_cultivo": str(row['tipo_de_cultivo']),
+                    "created_at": datetime.now().isoformat(),
+                    "is_prediction": False,
+                    "confidence": None
+                }
+                crops_to_insert.append(crop_data)
+            
+            # Insertar en lotes de 100 para evitar timeouts
+            batch_size = 100
+            total_inserted = 0
+            
+            for i in range(0, len(crops_to_insert), batch_size):
+                batch = crops_to_insert[i:i + batch_size]
+                result = self.supabase.table('crops').insert(batch).execute()
+                if result.data:
+                    total_inserted += len(result.data)
+                    logger.info(f"✅ Lote insertado: {len(result.data)} registros")
+                else:
+                    logger.warning(f"⚠️ Lote {i//batch_size + 1} no se insertó correctamente")
+            
+            logger.info(f"🎉 Datos iniciales cargados: {total_inserted} registros")
+            return {
+                "success": True, 
+                "message": f"Datos iniciales cargados exitosamente",
+                "loaded": total_inserted
+            }
+            
+        except Exception as e:
+            error_msg = f"Error cargando datos iniciales: {str(e)}"
+            logger.error(f"❌ {error_msg}")
+            return {"success": False, "error": error_msg}
