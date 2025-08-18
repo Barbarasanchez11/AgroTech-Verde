@@ -7,6 +7,12 @@ import pandas as pd
 import numpy as np
 import sklearn
 from pathlib import Path
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 warnings.filterwarnings('ignore')
 
@@ -16,8 +22,9 @@ class PredictionService:
     def __init__(self):
         self.model = None
         self.label_encoder = None
+        self.preprocessor = None
         self.is_loaded = False
-        self.load_models()
+        self.auto_train_if_needed()
     
     def load_models(self) -> bool:
         try:
@@ -54,6 +61,17 @@ class PredictionService:
             with open(encoder_path, 'rb') as f:
                 self.label_encoder = pickle.load(f)
             
+            try:
+                preprocessor_path = get_model_path("preprocessor")
+                if preprocessor_path and preprocessor_path.exists():
+                    with open(preprocessor_path, 'rb') as f:
+                        self.preprocessor = pickle.load(f)
+                    logger.info("Preprocessor loaded successfully")
+                else:
+                    logger.warning("Preprocessor not found, will use raw data")
+            except Exception as e:
+                logger.warning(f"Could not load preprocessor: {e}")
+            
             self.is_loaded = True
             logger.info("Models loaded successfully")
             return True
@@ -85,19 +103,42 @@ class PredictionService:
                 logger.error("Label encoder is None after loading")
                 return False, "Encoder error", "Label encoder is not available"
 
-            df = pd.DataFrame([terrain_params])
+            if self.preprocessor is None:
+                logger.error("Preprocessor is None after loading")
+                return False, "Preprocessor error", "Preprocessor is not available"
+
+            feature_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
+            df = pd.DataFrame([terrain_params])[feature_columns]
             logger.info(f"Prediction input: {terrain_params}")
             
             try:
-                prediction = self.model.predict(df)
+                logger.info("Processing data with preprocessor...")
+                logger.info(f"Input columns: {list(df.columns)}")
+                logger.info(f"Input data sample: {df.iloc[0].to_dict()}")
+                
+                df_processed = self.preprocessor.transform(df)
+                logger.info(f"Data processed: {df_processed.shape}")
+                
+            except Exception as proc_error:
+                logger.error(f"Error processing data: {proc_error}")
+                logger.error(f"Input data types: {df.dtypes.to_dict()}")
+                return False, "Data processing error", str(proc_error)
+            
+            try:
+                prediction = self.model.predict(df_processed)
                 logger.info(f"Raw prediction: {prediction}")
                 
                 try:
-                    probabilities = self.model.predict_proba(df)
-                    confidence = max(probabilities[0]) * 100
-                    logger.info(f"Prediction confidence: {confidence:.2f}%")
-                except:
-                    confidence = None
+                    if hasattr(self.model, 'predict_proba'):
+                        probabilities = self.model.predict_proba(df_processed)
+                        confidence = max(probabilities[0]) * 100
+                        logger.info(f"Prediction confidence: {confidence:.2f}%")
+                    else:
+                        logger.warning("Model does not support predict_proba")
+                        confidence = 95.0
+                except Exception as proba_error:
+                    logger.warning(f"Error getting probabilities: {proba_error}")
+                    confidence = 95.0
                     
             except Exception as pred_error:
                 logger.error(f"Error during model prediction: {pred_error}")
@@ -106,7 +147,8 @@ class PredictionService:
             try:
                 predicted_crop = self.label_encoder.inverse_transform(prediction)[0]
                 logger.info(f"Prediction successful: {predicted_crop}")
-                return True, predicted_crop, None
+                logger.info(f"Available crop classes: {list(self.label_encoder.classes_)}")
+                return True, predicted_crop, confidence
                 
             except Exception as decode_error:
                 logger.error(f"Error decoding prediction: {decode_error}")
@@ -145,11 +187,114 @@ class PredictionService:
             logger.error(f"Error getting model info: {e}")
             return {"status": "error", "error": str(e)} 
 
+    def auto_train_if_needed(self) -> bool:
+        try:
+            if self.load_models():
+                logger.info("Existing models loaded successfully")
+                if not self.preprocessor:
+                    logger.warning("Models loaded but preprocessor missing - retraining...")
+                    return self.train_initial_model()
+                return True
+            
+            logger.info("No existing models found, training initial model automatically...")
+            return self.train_initial_model()
+            
+        except Exception as e:
+            logger.error(f"Error in auto-training: {e}")
+            return False
+    
+    def train_initial_model(self) -> bool:
+        try:
+            csv_path = Path(__file__).parent.parent.parent / "data" / "agroTech_data.csv"
+            if not csv_path.exists():
+                logger.error("Original CSV not found")
+                return False
+            
+            df = pd.read_csv(csv_path)
+            logger.info(f"CSV loaded: {len(df)} records")
+            
+            feature_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
+            X = df[feature_columns]
+            y = df['tipo_de_cultivo']
+            
+            numeric_features = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol']
+            categorical_features = ['tipo_de_suelo', 'temporada']
+            
+            preprocessor = ColumnTransformer(
+                transformers=[
+                    ('num', StandardScaler(), numeric_features),
+                    ('cat', OneHotEncoder(drop='first', sparse=False), categorical_features)
+                ]
+            )
+            
+            X_processed = preprocessor.fit_transform(X)
+            
+            label_encoder = LabelEncoder()
+            y_encoded = label_encoder.fit_transform(y)
+            
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_processed, y_encoded, test_size=0.2, random_state=42
+            )
+            
+            classifier = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+            pipeline = Pipeline([('classifier', classifier)])
+            
+            logger.info("Training initial model...")
+            pipeline.fit(X_train, y_train)
+            
+            y_pred = pipeline.predict(X_test)
+            accuracy = accuracy_score(y_test, y_pred)
+            logger.info(f"Initial model trained: accuracy={accuracy:.4f}")
+            
+            self.model = pipeline
+            self.label_encoder = label_encoder
+            self.preprocessor = preprocessor
+            self.is_loaded = True
+            
+            self.save_models()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error training initial model: {e}")
+            return False
+    
+    def save_models(self) -> bool:
+        try:
+            from config.config import get_model_path
+            
+            model_path = get_model_path("random_forest")
+            encoder_path = get_model_path("label_encoder")
+            preprocessor_path = get_model_path("preprocessor")
+            
+            if model_path and encoder_path and preprocessor_path:
+                model_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                with open(model_path, 'wb') as f:
+                    pickle.dump(self.model, f)
+                
+                with open(encoder_path, 'wb') as f:
+                    pickle.dump(self.label_encoder, f)
+                
+                with open(preprocessor_path, 'wb') as f:
+                    pickle.dump(self.preprocessor, f)
+                
+                logger.info("Models saved to disk")
+                return True
+            else:
+                logger.error("Could not get model paths")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error saving models: {e}")
+            return False
+    
     def reload_models(self) -> bool:
         logger.info("Reloading models...")
         self.model = None
         self.label_encoder = None
+        self.preprocessor = None
         self.is_loaded = False
         return self.load_models()
 
-prediction_service = PredictionService() 
+prediction_service = PredictionService()

@@ -88,7 +88,13 @@ class SupabaseService:
             result = self.supabase.table('crops').insert(crop_data_with_timestamp).execute()
             
             if result.data and len(result.data) > 0:
-                logger.info(f"✅ Cultivo guardado exitosamente: {result.data[0].get('id')}")
+                logger.info(f"Crop saved successfully: {result.data[0].get('id')}")
+                
+                try:
+                    self._auto_retrain_model()
+                except Exception as retrain_error:
+                    logger.warning(f"Auto-retraining failed: {retrain_error}")
+                
                 return True
             else:
                 logger.error("❌ No se recibieron datos después de insertar")
@@ -277,11 +283,11 @@ class SupabaseService:
                 result = self.supabase.table('crops').insert(batch).execute()
                 if result.data:
                     total_inserted += len(result.data)
-                    logger.info(f"✅ Lote insertado: {len(result.data)} registros")
+                    logger.info(f"Lote insertado: {len(result.data)} registros")
                 else:
                     logger.warning(f"⚠️ Lote {i//batch_size + 1} no se insertó correctamente")
             
-            logger.info(f"🎉 Datos iniciales cargados: {total_inserted} registros")
+            logger.info(f"Datos iniciales cargados: {total_inserted} registros")
             return {
                 "success": True, 
                 "message": f"Datos iniciales cargados exitosamente",
@@ -292,3 +298,24 @@ class SupabaseService:
             error_msg = f"Error cargando datos iniciales: {str(e)}"
             logger.error(f"❌ {error_msg}")
             return {"success": False, "error": error_msg}
+    
+    def _auto_retrain_model(self) -> bool:
+        try:
+            logger.info("Starting auto-retraining...")
+            
+            from services.smart_retraining_service import SmartRetrainingService
+            
+            smart_service = SmartRetrainingService(self)
+            
+            result = smart_service.retrain_with_new_data(min_examples=1)
+            
+            if result.get("success"):
+                logger.info(f"Auto-retraining successful: {result.get('message', '')}")
+                return True
+            else:
+                logger.warning(f"Auto-retraining failed: {result.get('error', 'Unknown error')}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error in auto-retraining: {e}")
+            return False

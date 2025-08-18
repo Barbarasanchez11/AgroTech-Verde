@@ -29,11 +29,10 @@ def init_services():
         database_service = SupabaseService()
         prediction_service.load_models()
         
-        # Cargar datos iniciales del CSV si la base de datos está vacía
         try:
             load_result = database_service.load_initial_data_from_csv()
             if load_result.get("success") and load_result.get("loaded", 0) > 0:
-                st.success(f"✅ Datos iniciales cargados: {load_result['loaded']} cultivos del CSV original")
+                st.success(f"Datos iniciales cargados: {load_result['loaded']} cultivos del CSV original")
         except Exception as e:
             logger.warning(f"No se pudieron cargar datos iniciales: {e}")
         
@@ -143,7 +142,7 @@ def handle_prediction(terrain_params: Dict[str, Any]):
             crop = crop_or_error
             confidence = 95.0 
             
-            st.markdown("###  Resultado de la Predicción")
+            st.markdown("### Resultado de la Predicción")
             
             st.markdown(f"""
             <div style="
@@ -171,18 +170,11 @@ def handle_prediction(terrain_params: Dict[str, Any]):
             
             try:
                 save_result = database_service.save_prediction(terrain_params, crop, confidence)
-                if save_result.get("success"):
-                    st.success(f"**{crop.upper()}** recomendado y guardado exitosamente!")
-                    st.info(f"**Cultivo:** {crop.capitalize()} | **Confianza:** {confidence:.1f}% | **Guardado en base de datos**")
-                    st.success("**Consejo:** Consulta tu historial de predicciones en la pestaña 'Historial' para ver todas tus recomendaciones anteriores.")
-                    
-                    st.balloons()
-                    st.info("🎯 **Predicción guardada en Supabase** - Ahora aparece en tu historial")
-                else:
-                    st.error(f"❌ **Error al guardar:** {save_result.get('error', 'Error desconocido')}")
+                if not save_result.get("success"):
+                    st.error(f"**Error al guardar:** {save_result.get('error', 'Error desconocido')}")
             except Exception as e:
                 logger.error(f"Error saving to Supabase: {e}")
-                st.error("❌ **Error al guardar la predicción** - Intenta nuevamente")
+                st.error("**Error al guardar la predicción** - Intenta nuevamente")
             
             st.markdown("### Información del Cultivo")
             
@@ -271,7 +263,6 @@ def render_new_crop_form():
         temporada = st.selectbox("Temporada", SEASONS, key="new_temporada")
         tipo_de_cultivo = st.text_input("Tipo de cultivo", key="new_tipo_de_cultivo")
         
-        # Validación en tiempo real del nombre del cultivo
         if tipo_de_cultivo:
             try:
                 from services.crop_normalizer import CropNormalizer
@@ -281,10 +272,8 @@ def render_new_crop_form():
                 if validation["is_valid"]:
                     if validation["needs_normalization"]:
                         pass
-                    else:
-                        st.success("✅ Nombre válido")
                 else:
-                    st.error(f"❌ {validation['error']}")
+                    st.error(f"{validation['error']}")
                     
             except Exception as e:
                 st.warning("No se pudo validar el nombre del cultivo")
@@ -311,7 +300,6 @@ def render_new_crop_form():
                 if database_service.save_crop_data(crop_data):
                     if normalized_name != tipo_de_cultivo:
                         st.success(f"Cultivo guardado correctamente como '{normalized_name}'")
-                        st.info(f"El nombre se normalizó de '{tipo_de_cultivo}' a '{normalized_name}'")
                     else:
                         st.success("Cultivo guardado correctamente")
                 else:
@@ -353,7 +341,7 @@ def render_crops_history():
         )
 
         st.markdown("---")
-        st.markdown("## Estado del Sistema de Reentrenamiento")
+        st.markdown("## Estado del Sistema Inteligente")
         st.markdown("---")
     
         try:
@@ -368,19 +356,14 @@ def render_crops_history():
                 with col2:
                     st.metric("Cultivos Únicos", len(status['available_crops']))
                 
-                if not status['can_retrain']:
-                    st.warning(f"Se necesitan al menos 5 ejemplos para reentrenar. Agrega más cultivos con diferentes parámetros.")
-                
                 if status['available_crops']:
                     try:
                         from services.crop_normalizer import CropNormalizer
                         normalizer = CropNormalizer()
                         
-                        # Mostrar cultivos normalizados
                         normalized_crops = sorted(status['available_crops'])
                         st.info(f"Cultivos disponibles ({len(normalized_crops)}): {', '.join(normalized_crops)}")
                         
-                        # Mostrar estadísticas de normalización
                         all_crops = database_service.get_all_crops()
                         if all_crops:
                             original_names = [crop['tipo_de_cultivo'] for crop in all_crops]
@@ -388,10 +371,11 @@ def render_crops_history():
                             unique_normalized = len(normalized_crops)
                             
                             if unique_original > unique_normalized:
-                                st.success(f"✅ Sistema de limpieza activo: {unique_original} nombres → {unique_normalized} únicos")
+                                st.success(f"Sistema de limpieza activo: {unique_original} nombres → {unique_normalized} únicos")
                     except Exception as e:
                         st.info(f"Cultivos disponibles: {', '.join(status['available_crops'])}")
                         st.error(f"Error en normalización: {str(e)}")
+                
             else:
                 st.error(f"Error en servicio: {status.get('error')}")
                 
@@ -399,56 +383,6 @@ def render_crops_history():
             st.error(f"Error obteniendo estado del sistema: {str(e)}")
             st.exception(e)
         
-        st.markdown("---")
-        st.markdown("## Reentrenar Modelo")
-        st.markdown("Actualiza el modelo de predicción incorporando todos los cultivos disponibles en la base de datos para mejorar la precisión de las predicciones futuras.")
-        
-        if st.button("Reentrenar Modelo", type="primary", use_container_width=True):
-            with st.spinner("Reentrenando modelo con todos los datos..."):
-                try:
-                    from services.smart_retraining_service import SmartRetrainingService
-                    
-                    smart_service = SmartRetrainingService(database_service)
-                    
-                    # Mostrar estado actual
-                    status = smart_service.get_retraining_status()
-                    if status.get("error"):
-                        st.error(f"Error obteniendo estado: {status['error']}")
-                        return
-                    
-                    st.info(f"Estado actual: {status['total_examples']} ejemplos de {len(status['available_crops'])} cultivos")
-                    
-                    if not status['can_retrain']:
-                        st.warning(f"Se necesitan al menos 5 ejemplos para reentrenar. Actualmente tienes {status['total_examples']}")
-                        st.info("Agrega más cultivos con diferentes parámetros para mejorar el modelo")
-                        return
-                    
-                   
-                    result = smart_service.retrain_with_new_data(min_examples=5)
-                    
-                    if result['success']:
-                        st.success("Modelo reentrenado exitosamente con nuevos datos")
-                        
-                        col1, col2, col3 = st.columns(3)
-                        with col1:
-                            st.metric("Precisión", f"{result['accuracy']:.2%}")
-                        with col2:
-                            st.metric("Total Registros", result['total_records'])
-                        with col3:
-                            st.metric("Cultivos", len(result['crop_classes']))
-                        
-                        st.info(f"Precisión con validación cruzada: {result['cv_accuracy']:.2%}")
-                        st.info(f"Nuevos cultivos incorporados: {result['new_crops_added']}")
-                        st.info(f"Cultivos disponibles: {', '.join(result['crop_classes'])}")
-                        
-                        st.success("El modelo ahora reconoce todos los cultivos introducidos")
-                        
-                    else:
-                        st.error(f"Error durante el reentrenamiento: {result['error']}")
-                        
-                except Exception as e:
-                    st.error(f"Error durante el reentrenamiento: {str(e)}")
-                    st.info("Intenta recargar la página y volver a intentarlo")
     else:
         st.info("No hay registros de cultivos disponibles.")
 
@@ -504,4 +438,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -14,17 +14,17 @@ from sklearn.metrics import accuracy_score, classification_report
 logger = logging.getLogger(__name__)
 
 class SmartRetrainingService:
-    def __init__(self, firebase_service):
-        self.firebase_service = firebase_service
+    def __init__(self, database_service):
+        self.database_service = database_service
         self.dataset_path = Path("data/agroTech_data.csv")
         self.models_dir = Path("src/models")
         
     def collect_new_crop_data(self, min_examples: int = 5) -> Dict[str, List[Dict]]:
         
         try:
-            from src.services.crop_normalizer import CropNormalizer
+            from services.crop_normalizer import CropNormalizer
             
-            all_crops = self.firebase_service.get_all_crops()
+            all_crops = self.database_service.get_all_crops()
             if not all_crops:
                 return {}
             
@@ -76,7 +76,7 @@ class SmartRetrainingService:
                         'horas_de_sol': record['horas_de_sol'],
                         'tipo_de_suelo': record['tipo_de_suelo'],
                         'temporada': record['temporada'],
-                        'crop': crop_name
+                        'tipo_de_cultivo': crop_name 
                     }
                     new_records.append(new_record)
             
@@ -101,15 +101,27 @@ class SmartRetrainingService:
             logger.error(f"Error merging datasets: {e}")
             return pd.DataFrame()
     
-    def prepare_features(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-        """Prepara features para el modelo"""
+    def prepare_features(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, ColumnTransformer, LabelEncoder]:
+
         try:
-           
+            
+            required_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada', 'tipo_de_cultivo']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                logger.error(f"Columnas faltantes: {missing_columns}")
+                logger.error(f"Columnas disponibles: {list(df.columns)}")
+                return None, None, None, None
+            
             feature_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
             X = df[feature_columns]
-            y = df['crop']
+            y = df['tipo_de_cultivo']
             
+        
+            if X.isnull().any().any() or y.isnull().any():
+                logger.error("Datos con valores nulos detectados")
+                return None, None, None, None
             
+           
             numeric_features = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol']
             categorical_features = ['tipo_de_suelo', 'temporada']
             
@@ -120,128 +132,198 @@ class SmartRetrainingService:
                 ]
             )
             
-          
-            X_processed = preprocessor.fit_transform(X)
-            
-           
+       
             label_encoder = LabelEncoder()
-            y_encoded = label_encoder.fit_transform(y)
             
-            logger.info(f"Features prepared: {X_processed.shape}, {len(label_encoder.classes_)} crop classes")
-            return X_processed, y_encoded, preprocessor, label_encoder
+            logger.info(f"Features preparados: X={X.shape}, y={len(y)} clases")
+            return X, y, preprocessor, label_encoder
             
         except Exception as e:
             logger.error(f"Error preparing features: {e}")
             return None, None, None, None
     
-    def train_model(self, X: np.ndarray, y: np.ndarray, preprocessor, label_encoder) -> Tuple[Pipeline, float]:
-        
+    def train_model(self, X: pd.DataFrame, y: pd.Series, preprocessor, label_encoder) -> Tuple[Pipeline, float]:
+       
         try:
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42, stratify=y
-            )
             
-           
+            logger.info("Procesando features...")
+            X_processed = preprocessor.fit_transform(X)
+            
+            logger.info(" Codificando target...")
+            y_encoded = label_encoder.fit_transform(y)
+            
+            
+            unique_classes, class_counts = np.unique(y_encoded, return_counts=True)
+            logger.info(f" Distribución de clases: {dict(zip(unique_classes, class_counts))}")
+            
+            
+            min_class_count = np.min(class_counts)
+            can_stratify = min_class_count >= 2
+            
+            if can_stratify:
+                logger.info(" Usando stratified split (todas las clases tienen ≥2 ejemplos)")
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X_processed, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+                )
+            else:
+                logger.warning(f"No se puede usar stratified split (clase mínima: {min_class_count})")
+                logger.info(" Usando split aleatorio simple")
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X_processed, y_encoded, test_size=0.2, random_state=42, stratify=None
+                )
+            
+            
             classifier = RandomForestClassifier(
                 n_estimators=100,
                 random_state=42,
                 n_jobs=-1
             )
             
+          
             pipeline = Pipeline([
-                ('preprocessor', preprocessor),
                 ('classifier', classifier)
             ])
             
-            
+           
+            logger.info(" Entrenando RandomForest...")
             pipeline.fit(X_train, y_train)
             
-           
+            
             y_pred = pipeline.predict(X_test)
             accuracy = accuracy_score(y_test, y_pred)
             
+           
+            cv_accuracy = 0.0
+            if can_stratify and len(unique_classes) >= 3:
+                try:
+                    cv_scores = cross_val_score(pipeline, X_processed, y_encoded, cv=min(3, min_class_count), n_jobs=-1)
+                    cv_accuracy = cv_scores.mean()
+                    logger.info(f" Validación cruzada: {cv_accuracy:.4f}")
+                except Exception as cv_error:
+                    logger.warning(f" Validación cruzada falló: {cv_error}")
+            else:
+                logger.info(" Saltando validación cruzada (insuficientes ejemplos)")
             
-            cv_scores = cross_val_score(pipeline, X, y, cv=5)
-            cv_mean = cv_scores.mean()
-            cv_std = cv_scores.std()
+            logger.info(f" Modelo entrenado exitosamente:")
+            logger.info(f"  Precisión test: {accuracy:.4f}")
+            logger.info(f"  Precisión CV: {cv_accuracy:.4f}")
+            logger.info(f"  Cultivos disponibles: {list(label_encoder.classes_)}")
             
-            logger.info(f"Model trained successfully:")
-            logger.info(f"  Test accuracy: {accuracy:.4f}")
-            logger.info(f"  CV accuracy: {cv_mean:.4f} (+/- {cv_std * 2:.4f})")
-            logger.info(f"  Available crops: {list(label_encoder.classes_)}")
-            
-            return pipeline, accuracy, cv_mean
+            return pipeline, accuracy, cv_accuracy
             
         except Exception as e:
-            logger.error(f"Error training model: {e}")
+            logger.error(f" Error entrenando modelo: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return None, 0.0, 0.0
     
-    def save_updated_model(self, pipeline, label_encoder, accuracy: float) -> bool:
-       
+    def save_updated_model(self, pipeline, label_encoder, preprocessor, accuracy: float) -> bool:
+        """Guarda el modelo, encoder y preprocessor actualizados"""
         try:
-            
             self.models_dir.mkdir(parents=True, exist_ok=True)
             
-            
+           
             model_path = self.models_dir / "modelo_random_forest.pkl"
             with open(model_path, 'wb') as f:
                 pickle.dump(pipeline, f)
             
-           
+            
             encoder_path = self.models_dir / "label_encoder.pkl"
             with open(encoder_path, 'wb') as f:
                 pickle.dump(label_encoder, f)
             
-           
-            updated_dataset_path = self.dataset_path
-            updated_dataset_path.parent.mkdir(parents=True, exist_ok=True)
             
-            logger.info(f"Updated model saved successfully:")
-            logger.info(f"  Model: {model_path}")
+            preprocessor_path = self.models_dir / "preprocessor.pkl"
+            with open(preprocessor_path, 'wb') as f:
+                pickle.dump(preprocessor, f)
+            
+            logger.info(f" Modelo actualizado guardado exitosamente:")
+            logger.info(f"  Modelo: {model_path}")
             logger.info(f"  Encoder: {encoder_path}")
-            logger.info(f"  Final accuracy: {accuracy:.4f}")
+            logger.info(f"  Preprocessor: {preprocessor_path}")
+            logger.info(f"  Precisión final: {accuracy:.4f}")
             
             return True
             
         except Exception as e:
-            logger.error(f"Error saving updated model: {e}")
+            logger.error(f" Error guardando modelo actualizado: {e}")
             return False
     
     def retrain_with_new_data(self, min_examples: int = 5) -> Dict[str, Any]:
-       
+        
         try:
-            logger.info("Starting smart retraining process...")
+            logger.info(" Iniciando proceso de reentrenamiento inteligente...")
             
            
-            new_data = self.collect_new_crop_data(min_examples)
-            if not new_data:
-                return {"success": False, "error": "No data available for retraining"}
+            logger.info("📊Cargando dataset original...")
+            if not self.dataset_path.exists():
+                return {"success": False, "error": "Dataset original no encontrado"}
+            
+            original_df = pd.read_csv(self.dataset_path)
+            logger.info(f" Dataset original cargado: {len(original_df)} registros")
+            
+            
+            logger.info(" Obteniendo nuevos datos de Supabase...")
+            new_crops = self.database_service.get_all_crops()
+            if not new_crops:
+                return {"success": False, "error": "No hay nuevos datos en Supabase"}
+            
+            logger.info(f" Nuevos datos obtenidos: {len(new_crops)} registros")
+            
+            
+            new_records = []
+            for crop in new_crops:
+               
+                if not crop.get('is_prediction', False):
+                    new_record = {
+                        'ph': float(crop['ph']),
+                        'humedad': float(crop['humedad']),
+                        'temperatura': float(crop['temperatura']),
+                        'precipitacion': float(crop['precipitacion']),
+                        'horas_de_sol': float(crop['horas_de_sol']),
+                        'tipo_de_suelo': str(crop['tipo_de_suelo']),
+                        'temporada': str(crop['temporada']),
+                        'tipo_de_cultivo': str(crop['tipo_de_cultivo'])
+                    }
+                    new_records.append(new_record)
+            
+            if not new_records:
+                return {"success": False, "error": "No hay datos válidos para combinar"}
+            
+            new_df = pd.DataFrame(new_records)
+            logger.info(f" Nuevos datos preparados: {len(new_df)} registros")
             
            
-            combined_df = self.merge_with_original_dataset(new_data)
-            if combined_df.empty:
-                return {"success": False, "error": "Failed to merge datasets"}
+            logger.info("Combinando datasets...")
+            combined_df = pd.concat([original_df, new_df], ignore_index=True)
+            logger.info(f" Datasets combinados: {len(original_df)} original + {len(new_df)} nuevos = {len(combined_df)} total")
             
-     
+         
+            logger.info(" Preparando features...")
             result = self.prepare_features(combined_df)
             if result[0] is None:
-                return {"success": False, "error": "Failed to prepare features"}
+                return {"success": False, "error": "Error preparando features"}
             
             X, y, preprocessor, label_encoder = result
+            logger.info(f"Features preparados: X={X.shape}, y={len(y)} clases")
             
            
+            logger.info(" Entrenando modelo...")
             result = self.train_model(X, y, preprocessor, label_encoder)
             if result[0] is None:
-                return {"success": False, "error": "Failed to train model"}
+                return {"success": False, "error": "Error entrenando modelo"}
             
             pipeline, accuracy, cv_accuracy = result
+            logger.info(f" Modelo entrenado: precisión={accuracy:.4f}, CV={cv_accuracy:.4f}")
             
            
-            if not self.save_updated_model(pipeline, label_encoder, accuracy):
-                return {"success": False, "error": "Failed to save updated model"}
+            logger.info(" Guardando modelo...")
+            if not self.save_updated_model(pipeline, label_encoder, preprocessor, accuracy):
+                return {"success": False, "error": "Error guardando modelo"}
             
-           
+            
             combined_df.to_csv(self.dataset_path, index=False)
+            logger.info(" Dataset combinado guardado")
             
             return {
                 "success": True,
@@ -249,27 +331,39 @@ class SmartRetrainingService:
                 "cv_accuracy": cv_accuracy,
                 "total_records": len(combined_df),
                 "crop_classes": list(label_encoder.classes_),
-                "new_crops_added": len(new_data),
-                "message": f"Model successfully retrained with {len(combined_df)} total records and {len(label_encoder.classes_)} crop classes"
+                "new_crops_added": len(new_df),
+                "message": f" Modelo reentrenado exitosamente con {len(combined_df)} registros totales y {len(label_encoder.classes_)} tipos de cultivo"
             }
             
         except Exception as e:
-            logger.error(f"Error in smart retraining: {e}")
-            return {"success": False, "error": str(e)}
+            logger.error(f" Error en reentrenamiento inteligente: {e}")
+            import traceback
+            logger.error(f"Traceback completo: {traceback.format_exc()}")
+            return {"success": False, "error": f"Error detallado: {str(e)}"}
     
     def get_retraining_status(self) -> Dict[str, Any]:
-        
-        try:
-           
-            new_data = self.collect_new_crop_data(min_examples=1)
-            total_examples = sum(len(records) for records in new_data.values())
-            
        
+        try:
+            
+            new_crops = self.database_service.get_all_crops()
+            if not new_crops:
+                return {"error": "No hay datos disponibles"}
+            
+           
+            unique_crops = set()
+            total_examples = 0
+            
+            for crop in new_crops:
+                if not crop.get('is_prediction', False):
+                    unique_crops.add(crop['tipo_de_cultivo'].lower().strip())
+                    total_examples += 1
+            
+           
             model_path = self.models_dir / "modelo_random_forest.pkl"
             encoder_path = self.models_dir / "label_encoder.pkl"
             
             status = {
-                "available_crops": list(new_data.keys()),
+                "available_crops": list(unique_crops),
                 "total_examples": total_examples,
                 "model_exists": model_path.exists(),
                 "encoder_exists": encoder_path.exists(),
@@ -280,5 +374,5 @@ class SmartRetrainingService:
             return status
             
         except Exception as e:
-            logger.error(f"Error getting retraining status: {e}")
+            logger.error(f"Error obteniendo estado del sistema: {e}")
             return {"error": str(e)} 
