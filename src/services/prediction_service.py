@@ -18,6 +18,23 @@ warnings.filterwarnings('ignore')
 
 logger = logging.getLogger(__name__)
 
+# ✅ NUEVO: Definimos get_model_path de forma global para que esté siempre disponible
+def get_model_path(model_name: str):
+    """
+    Devuelve la ruta absoluta al modelo, encoder o preprocessor.
+    """
+    models_dir = Path(__file__).parent.parent / "models"
+    models_dir.mkdir(exist_ok=True)
+    
+    if model_name == "random_forest":
+        return models_dir / "modelo_random_forest.pkl"
+    elif model_name == "label_encoder":
+        return models_dir / "label_encoder.pkl"
+    elif model_name == "preprocessor":
+        return models_dir / "preprocessor.pkl"
+    return None
+
+
 class PredictionService:
     def __init__(self):
         self.model = None
@@ -63,22 +80,6 @@ class PredictionService:
 
     def load_models(self) -> bool:
         try:
-            try:
-                from src.config.config import get_model_path
-            except ImportError:
-               
-                def get_model_path(model_name):
-                    models_dir = Path(__file__).parent.parent / "models"
-                    models_dir.mkdir(exist_ok=True)
-                    
-                    if model_name == "random_forest":
-                        return models_dir / "modelo_random_forest.pkl"
-                    elif model_name == "label_encoder":
-                        return models_dir / "label_encoder.pkl"
-                    elif model_name == "preprocessor":
-                        return models_dir / "preprocessor.pkl"
-                    return None
-            
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")
             
@@ -159,7 +160,6 @@ class PredictionService:
                 if self.preprocessor is None:
                     return False, "Preprocessor error", "Preprocessor still not available after training"
 
-            
             df_input = pd.DataFrame([terrain_params])
             df = self._align_columns_to_preprocessor(df_input)
             logger.info(f"Prediction input: {terrain_params}")
@@ -216,8 +216,6 @@ class PredictionService:
             return {"status": "not_loaded"}
         
         try:
-            from src.config.config import get_model_path
-            
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")
             
@@ -329,22 +327,6 @@ class PredictionService:
     
     def save_models(self) -> bool:
         try:
-            try:
-                from src.config.config import get_model_path
-            except ImportError:
-                
-                def get_model_path(model_name):
-                    models_dir = Path(__file__).parent.parent / "models"
-                    models_dir.mkdir(exist_ok=True)
-                    
-                    if model_name == "random_forest":
-                        return models_dir / "modelo_random_forest.pkl"
-                    elif model_name == "label_encoder":
-                        return models_dir / "label_encoder.pkl"
-                    elif model_name == "preprocessor":
-                        return models_dir / "preprocessor.pkl"
-                    return None
-            
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")
             preprocessor_path = get_model_path("preprocessor")
