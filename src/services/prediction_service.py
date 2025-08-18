@@ -268,24 +268,25 @@ class PredictionService:
             logger.info(f"CSV loaded: {len(df)} records")
             logger.info(f"Available CSV columns: {list(df.columns)}")
             
-            
-            if 'humedad' in df.columns:  
+            if 'humedad' in df.columns:
                 feature_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
                 target_column = 'tipo_de_cultivo'
-            else:  
+                numeric_features = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol']
+                categorical_features = ['tipo_de_suelo', 'temporada']
+            else:
                 feature_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season']
                 target_column = 'crop_type'
+                numeric_features = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours']
+                categorical_features = ['soil_type', 'season']
+            
+            missing_columns = [col for col in feature_columns if col not in df.columns]
+            if missing_columns:
+                logger.error(f"Missing columns in CSV: {missing_columns}")
+                logger.error(f"Available columns: {list(df.columns)}")
+                return False
             
             X = df[feature_columns]
             y = df[target_column]
-            
-            
-            if 'humedad' in df.columns: 
-                numeric_features = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol']
-                categorical_features = ['tipo_de_suelo', 'temporada']
-            else:  
-                numeric_features = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours']
-                categorical_features = ['soil_type', 'season']
             
             preprocessor = ColumnTransformer(
                 transformers=[
