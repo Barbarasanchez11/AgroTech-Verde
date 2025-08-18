@@ -68,16 +68,28 @@ class SmartRetrainingService:
             new_records = []
             for crop_name, records in new_data.items():
                 for record in records:
-                    new_record = {
-                        'ph': record['ph'],
-                        'humidity': record['humidity'],
-                        'temperature': record['temperature'],
-                        'precipitation': record['precipitation'],
-                        'sun_hours': record['sun_hours'],
-                        'soil_type': record['soil_type'],
-                        'season': record['season'],
-                        'crop_type': crop_name
-                    }
+                    if 'humedad' in record:
+                        new_record = {
+                            'ph': record['ph'],
+                            'humedad': record['humedad'],
+                            'temperatura': record['temperatura'],
+                            'precipitacion': record['precipitacion'],
+                            'horas_de_sol': record['horas_de_sol'],
+                            'tipo_de_suelo': record['tipo_de_suelo'],
+                            'temporada': record['temporada'],
+                            'tipo_de_cultivo': crop_name
+                        }
+                    else:
+                        new_record = {
+                            'ph': record['ph'],
+                            'humidity': record['humidity'],
+                            'temperature': record['temperature'],
+                            'precipitation': record['precipitation'],
+                            'sun_hours': record['sun_hours'],
+                            'soil_type': record['soil_type'],
+                            'season': record['season'],
+                            'crop_type': crop_name
+                        }
                     new_records.append(new_record)
             
             if new_records:
@@ -104,26 +116,35 @@ class SmartRetrainingService:
     def prepare_features(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series, ColumnTransformer, LabelEncoder]:
 
         try:
+            logger.info(f"Available columns in dataset: {list(df.columns)}")
             
-            required_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season', 'crop_type']
+            if 'humedad' in df.columns:
+                required_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada', 'tipo_de_cultivo']
+                feature_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
+                target_column = 'tipo_de_cultivo'
+                numeric_features = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol']
+                categorical_features = ['tipo_de_suelo', 'temporada']
+            else:
+                required_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season', 'crop_type']
+                feature_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season']
+                target_column = 'crop_type'
+                numeric_features = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours']
+                categorical_features = ['soil_type', 'season']
+            
             missing_columns = [col for col in required_columns if col not in df.columns]
             if missing_columns:
                 logger.error(f"Missing columns: {missing_columns}")
                 logger.error(f"Available columns: {list(df.columns)}")
                 return None, None, None, None
             
-            feature_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season']
             X = df[feature_columns]
-            y = df['crop_type']
+            y = df[target_column]
             
-        
             if X.isnull().any().any() or y.isnull().any():
                 logger.error("Datos con valores nulos detectados")
+                logger.error(f"Null values in X: {X.isnull().sum()}")
+                logger.error(f"Null values in y: {y.isnull().sum()}")
                 return None, None, None, None
-            
-           
-            numeric_features = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours']
-            categorical_features = ['soil_type', 'season']
             
             preprocessor = ColumnTransformer(
                 transformers=[
