@@ -132,7 +132,7 @@ class SupabaseService:
                 
                 return True
             else:
-                logger.error(" No se recibieron datos después de insertar")
+                logger.error("No data received after insert")
                 return False
                 
         except Exception as e:
@@ -160,14 +160,14 @@ class SupabaseService:
             result = self.supabase.table('crops').insert(db_prediction_data).execute()
             
             if result.data and len(result.data) > 0:
-                logger.info(f" Predicción guardada exitosamente: {result.data[0].get('id')}")
+                logger.info(f"Prediction saved successfully: {result.data[0].get('id')}")
                 return {
                     "success": True, 
                     "data": result.data[0],
                     "message": "Predicción guardada exitosamente"
                 }
             else:
-                logger.error(" No se recibieron datos después de insertar predicción")
+                logger.error("No data received after inserting prediction")
                 return {"success": False, "error": "No se pudo insertar en la base de datos"}
                 
         except Exception as e:
@@ -222,7 +222,7 @@ class SupabaseService:
             }
             
         except Exception as e:
-            logger.error(f" Error obteniendo estadísticas: {e}")
+            logger.error(f"Error getting statistics: {e}")
             return {"total_records": 0, "unique_crops": 0, "error": str(e)}
     
     def delete_all_crops(self) -> bool:
@@ -292,7 +292,7 @@ class SupabaseService:
             if not csv_path.exists():
                 return {"success": False, "error": f"Archivo CSV no encontrado en {csv_path}"}
             
-            # Leer CSV
+            # Read CSV
             df = pd.read_csv(csv_path)
             logger.info(f" CSV cargado: {len(df)} registros")
             
@@ -326,7 +326,7 @@ class SupabaseService:
                     total_inserted += len(result.data)
                     logger.info(f"Lote insertado: {len(result.data)} registros")
                 else:
-                    logger.warning(f" Lote {i//batch_size + 1} no se insertó correctamente")
+                    logger.warning(f"Batch {i//batch_size + 1} was not inserted correctly")
             
             logger.info(f"Datos iniciales cargados: {total_inserted} registros")
             return {

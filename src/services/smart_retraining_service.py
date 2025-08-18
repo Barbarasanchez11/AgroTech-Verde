@@ -154,7 +154,7 @@ class SmartRetrainingService:
             
             
             unique_classes, class_counts = np.unique(y_encoded, return_counts=True)
-            logger.info(f" Distribución de clases: {dict(zip(unique_classes, class_counts))}")
+            logger.info(f"Class distribution: {dict(zip(unique_classes, class_counts))}")
             
             
             min_class_count = np.min(class_counts)
@@ -166,8 +166,8 @@ class SmartRetrainingService:
                     X_processed, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
                 )
             else:
-                logger.warning(f"No se puede usar stratified split (clase mínima: {min_class_count})")
-                logger.info(" Usando split aleatorio simple")
+                logger.warning(f"Cannot use stratified split (minimum class: {min_class_count})")
+                logger.info("Using simple random split")
                 X_train, X_test, y_train, y_test = train_test_split(
                     X_processed, y_encoded, test_size=0.2, random_state=42, stratify=None
                 )
@@ -198,15 +198,15 @@ class SmartRetrainingService:
                 try:
                     cv_scores = cross_val_score(pipeline, X_processed, y_encoded, cv=min(3, min_class_count), n_jobs=-1)
                     cv_accuracy = cv_scores.mean()
-                    logger.info(f" Validación cruzada: {cv_accuracy:.4f}")
+                    logger.info(f"Cross-validation: {cv_accuracy:.4f}")
                 except Exception as cv_error:
-                    logger.warning(f" Validación cruzada falló: {cv_error}")
+                    logger.warning(f"Cross-validation failed: {cv_error}")
             else:
-                logger.info(" Saltando validación cruzada (insuficientes ejemplos)")
+                logger.info("Skipping cross-validation (insufficient examples)")
             
             logger.info(f" Modelo entrenado exitosamente:")
-            logger.info(f"  Precisión test: {accuracy:.4f}")
-            logger.info(f"  Precisión CV: {cv_accuracy:.4f}")
+            logger.info(f"  Test accuracy: {accuracy:.4f}")
+            logger.info(f"  CV accuracy: {cv_accuracy:.4f}")
             logger.info(f"  Cultivos disponibles: {list(label_encoder.classes_)}")
             
             return pipeline, accuracy, cv_accuracy
@@ -241,7 +241,7 @@ class SmartRetrainingService:
             logger.info(f"  Modelo: {model_path}")
             logger.info(f"  Encoder: {encoder_path}")
             logger.info(f"  Preprocessor: {preprocessor_path}")
-            logger.info(f"  Precisión final: {accuracy:.4f}")
+            logger.info(f"  Final accuracy: {accuracy:.4f}")
             
             return True
             
@@ -314,7 +314,7 @@ class SmartRetrainingService:
                 return {"success": False, "error": "Error entrenando modelo"}
             
             pipeline, accuracy, cv_accuracy = result
-            logger.info(f" Modelo entrenado: precisión={accuracy:.4f}, CV={cv_accuracy:.4f}")
+            logger.info(f"Model trained: accuracy={accuracy:.4f}, CV={cv_accuracy:.4f}")
             
            
             logger.info(" Guardando modelo...")
