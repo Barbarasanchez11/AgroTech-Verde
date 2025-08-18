@@ -101,8 +101,9 @@ class PredictionService:
                     
                 if hasattr(self.model, 'named_steps'):
                     classifier = self.model.named_steps.get('classifier')
-                    if classifier and hasattr(classifier, 'monotonic_cst'):
-                        logger.warning("Model has monotonic_cst attribute - potential version mismatch")
+                    if classifier is not None:
+                        if hasattr(classifier, 'monotonic_cst'):
+                            logger.warning("Model has monotonic_cst attribute - potential version mismatch")
                         
             except Exception as e:
                 logger.error(f"Error loading model with pickle: {e}")
