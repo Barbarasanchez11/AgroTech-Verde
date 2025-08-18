@@ -63,7 +63,21 @@ class PredictionService:
 
     def load_models(self) -> bool:
         try:
-            from src.config.config import get_model_path
+            try:
+                from src.config.config import get_model_path
+            except ImportError:
+               
+                def get_model_path(model_name):
+                    models_dir = Path(__file__).parent.parent / "models"
+                    models_dir.mkdir(exist_ok=True)
+                    
+                    if model_name == "random_forest":
+                        return models_dir / "modelo_random_forest.pkl"
+                    elif model_name == "label_encoder":
+                        return models_dir / "label_encoder.pkl"
+                    elif model_name == "preprocessor":
+                        return models_dir / "preprocessor.pkl"
+                    return None
             
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")
@@ -139,8 +153,11 @@ class PredictionService:
                 return False, "Encoder error", "Label encoder is not available"
 
             if self.preprocessor is None:
-                logger.error("Preprocessor is None after loading")
-                return False, "Preprocessor error", "Preprocessor is not available"
+                logger.warning("Preprocessor not available, training initial model...")
+                if not self.train_initial_model():
+                    return False, "Training error", "Failed to train initial model"
+                if self.preprocessor is None:
+                    return False, "Preprocessor error", "Preprocessor still not available after training"
 
             
             df_input = pd.DataFrame([terrain_params])
@@ -237,7 +254,8 @@ class PredictionService:
             
         except Exception as e:
             logger.error(f"Error in auto-training: {e}")
-            return False
+            logger.info("Falling back to initial model training...")
+            return self.train_initial_model()
     
     def train_initial_model(self) -> bool:
         try:
@@ -248,13 +266,26 @@ class PredictionService:
             
             df = pd.read_csv(csv_path)
             logger.info(f"CSV loaded: {len(df)} records")
+            logger.info(f"Available CSV columns: {list(df.columns)}")
             
-            feature_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season']
+            
+            if 'humedad' in df.columns:  
+                feature_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
+                target_column = 'tipo_de_cultivo'
+            else:  
+                feature_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season']
+                target_column = 'crop_type'
+            
             X = df[feature_columns]
-            y = df['crop_type']
+            y = df[target_column]
             
-            numeric_features = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours']
-            categorical_features = ['soil_type', 'season']
+            
+            if 'humedad' in df.columns: 
+                numeric_features = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol']
+                categorical_features = ['tipo_de_suelo', 'temporada']
+            else:  
+                numeric_features = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours']
+                categorical_features = ['soil_type', 'season']
             
             preprocessor = ColumnTransformer(
                 transformers=[
@@ -297,7 +328,21 @@ class PredictionService:
     
     def save_models(self) -> bool:
         try:
-            from src.config.config import get_model_path
+            try:
+                from src.config.config import get_model_path
+            except ImportError:
+                
+                def get_model_path(model_name):
+                    models_dir = Path(__file__).parent.parent / "models"
+                    models_dir.mkdir(exist_ok=True)
+                    
+                    if model_name == "random_forest":
+                        return models_dir / "modelo_random_forest.pkl"
+                    elif model_name == "label_encoder":
+                        return models_dir / "label_encoder.pkl"
+                    elif model_name == "preprocessor":
+                        return models_dir / "preprocessor.pkl"
+                    return None
             
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")

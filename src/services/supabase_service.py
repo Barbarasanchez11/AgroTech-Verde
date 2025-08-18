@@ -360,3 +360,20 @@ class SupabaseService:
         except Exception as e:
             logger.error(f"Error in auto-retraining: {e}")
             return False
+    
+    def ensure_initial_data(self) -> bool:
+        try:
+            existing_data = self.supabase.table('crops').select('id').limit(1).execute()
+            if not existing_data.data or len(existing_data.data) == 0:
+                logger.info("Database is empty, loading initial data...")
+                result = self.load_initial_data_from_csv()
+                if result.get("success"):
+                    logger.info(f"Initial data loaded: {result.get('loaded', 0)} records")
+                    return True
+                else:
+                    logger.error(f"Failed to load initial data: {result.get('error', 'Unknown error')}")
+                    return False
+            return True
+        except Exception as e:
+            logger.error(f"Error ensuring initial data: {e}")
+            return False

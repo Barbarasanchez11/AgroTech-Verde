@@ -30,11 +30,9 @@ def init_services():
         prediction_service.load_models()
         
         try:
-            load_result = database_service.load_initial_data_from_csv()
-            if load_result.get("success") and load_result.get("loaded", 0) > 0:
-                st.success(f"Datos iniciales cargados: {load_result['loaded']} cultivos del CSV original")
+            database_service.ensure_initial_data()
         except Exception as e:
-            logger.warning(f"No se pudieron cargar datos iniciales: {e}")
+            logger.warning(f"Could not ensure initial data: {e}")
         
         return prediction_service, database_service
     except Exception as e:
@@ -129,13 +127,13 @@ def handle_prediction(terrain_params: Dict[str, Any]):
             for error in errors:
                 st.error(f"- {error}")
             return
-        
+    
         st.markdown("### Parámetros Ingresados")
         params_df = pd.DataFrame([terrain_params])
         st.dataframe(params_df, use_container_width=True, hide_index=True)
         
         prediction_result = prediction_service.predict_crop(terrain_params)
-        
+    
         success, crop_or_error, error_details = prediction_result
         
         if success:
@@ -167,7 +165,7 @@ def handle_prediction(terrain_params: Dict[str, Any]):
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            
+        
             try:
                 save_result = database_service.save_prediction(terrain_params, crop, confidence)
                 if not save_result.get("success"):
@@ -376,8 +374,8 @@ def render_crops_history():
                         st.info(f"Cultivos disponibles: {', '.join(status['available_crops'])}")
                         st.error(f"Error en normalización: {str(e)}")
                 
-            else:
-                st.error(f"Error en servicio: {status.get('error')}")
+                else:
+                    st.error(f"Error en servicio: {status.get('error')}")
                 
         except Exception as e:
             st.error(f"Error obteniendo estado del sistema: {str(e)}")
