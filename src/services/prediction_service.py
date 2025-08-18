@@ -142,3 +142,11 @@ class PredictionService:
         except Exception as e:
             logger.error(f"Error during model prediction: {e}")
             return False, "Prediction error", str(e)
+
+    def get_model_info(self):
+        if self.model is None:
+            self.load_models()
+        return {
+            "model_name": type(self.model).__name__ if self.model else None,
+            "version": "1.0"
+        }
