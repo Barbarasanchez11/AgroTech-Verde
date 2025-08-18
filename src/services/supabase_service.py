@@ -344,7 +344,7 @@ class SupabaseService:
         try:
             logger.info("Starting auto-retraining...")
             
-            from services.smart_retraining_service import SmartRetrainingService
+            from src.services.smart_retraining_service import SmartRetrainingService
             
             smart_service = SmartRetrainingService(self)
             

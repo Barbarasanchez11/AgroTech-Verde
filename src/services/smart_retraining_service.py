@@ -22,7 +22,7 @@ class SmartRetrainingService:
     def collect_new_crop_data(self, min_examples: int = 5) -> Dict[str, List[Dict]]:
         
         try:
-            from services.crop_normalizer import CropNormalizer
+            from src.services.crop_normalizer import CropNormalizer
             
             all_crops = self.database_service.get_all_crops()
             if not all_crops:
@@ -218,7 +218,7 @@ class SmartRetrainingService:
             return None, 0.0, 0.0
     
     def save_updated_model(self, pipeline, label_encoder, preprocessor, accuracy: float) -> bool:
-        """Guarda el modelo, encoder y preprocessor actualizados"""
+       
         try:
             self.models_dir.mkdir(parents=True, exist_ok=True)
             
@@ -255,7 +255,7 @@ class SmartRetrainingService:
             logger.info(" Iniciando proceso de reentrenamiento inteligente...")
             
            
-            logger.info("📊Cargando dataset original...")
+            logger.info("Cargando dataset original")
             if not self.dataset_path.exists():
                 return {"success": False, "error": "Dataset original no encontrado"}
             

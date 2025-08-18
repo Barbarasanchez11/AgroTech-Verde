@@ -12,10 +12,10 @@ os.environ['STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION'] = 'true'
 os.environ['STREAMLIT_SERVER_FILE_WATCHER_TYPE'] = 'none'
 os.environ['STREAMLIT_SERVER_RUN_ON_SAVE'] = 'false'
 
-from config.config import APP_CONFIG, TERRAIN_PARAMS, SOIL_TYPES, SEASONS, STYLE_FILE
-from services.prediction_service import PredictionService
-from services.supabase_service import SupabaseService
-from utils.validators import DataValidator
+from src.config.config import APP_CONFIG, TERRAIN_PARAMS, SOIL_TYPES, SEASONS, STYLE_FILE
+from src.services.prediction_service import PredictionService
+from src.services.supabase_service import SupabaseService
+from src.utils.validators import DataValidator
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -265,7 +265,7 @@ def render_new_crop_form():
         
         if crop_type:
             try:
-                from services.crop_normalizer import CropNormalizer
+                from src.services.crop_normalizer import CropNormalizer
                 normalizer = CropNormalizer()
                 validation = normalizer.validate_crop_name(crop_type)
                 
@@ -281,7 +281,7 @@ def render_new_crop_form():
     if st.button("Guardar Cultivo"):
         if crop_type:
             try:
-                from services.crop_normalizer import CropNormalizer
+                from src.services.crop_normalizer import CropNormalizer
                 normalizer = CropNormalizer()
                 normalized_name = normalizer.normalize_crop_name(crop_type)
                 
@@ -345,7 +345,7 @@ def render_crops_history():
         st.markdown("---")
     
         try:
-            from services.smart_retraining_service import SmartRetrainingService
+            from src.services.smart_retraining_service import SmartRetrainingService
             smart_service = SmartRetrainingService(database_service)
             status = smart_service.get_retraining_status()
     
@@ -358,7 +358,7 @@ def render_crops_history():
                 
                 if status['available_crops']:
                     try:
-                        from services.crop_normalizer import CropNormalizer
+                        from src.services.crop_normalizer import CropNormalizer
                         normalizer = CropNormalizer()
                         
                         normalized_crops = sorted(status['available_crops'])

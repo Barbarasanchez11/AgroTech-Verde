@@ -63,7 +63,7 @@ class PredictionService:
 
     def load_models(self) -> bool:
         try:
-            from config.config import get_model_path
+            from src.config.config import get_model_path
             
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")
@@ -118,7 +118,7 @@ class PredictionService:
 
     def predict_crop(self, terrain_params: Dict[str, Any]) -> Tuple[bool, str, Optional[str]]:
         try:
-            from utils.validators import DataValidator
+            from src.utils.validators import DataValidator
             
             is_valid, errors = DataValidator.validate_terrain_params(terrain_params)
             if not is_valid:
@@ -199,7 +199,7 @@ class PredictionService:
             return {"status": "not_loaded"}
         
         try:
-            from config.config import get_model_path
+            from src.config.config import get_model_path
             
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")
@@ -249,12 +249,12 @@ class PredictionService:
             df = pd.read_csv(csv_path)
             logger.info(f"CSV loaded: {len(df)} records")
             
-            feature_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
+            feature_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season']
             X = df[feature_columns]
-            y = df['tipo_de_cultivo']
+            y = df['crop_type']
             
-            numeric_features = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol']
-            categorical_features = ['tipo_de_suelo', 'temporada']
+            numeric_features = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours']
+            categorical_features = ['soil_type', 'season']
             
             preprocessor = ColumnTransformer(
                 transformers=[
@@ -297,7 +297,7 @@ class PredictionService:
     
     def save_models(self) -> bool:
         try:
-            from config.config import get_model_path
+            from src.config.config import get_model_path
             
             model_path = get_model_path("random_forest")
             encoder_path = get_model_path("label_encoder")
