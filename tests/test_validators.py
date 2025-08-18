@@ -7,12 +7,12 @@ class TestDataValidator:
     def test_validate_terrain_params_valid(self):
         valid_params = {
             "ph": 6.5,
-            "humedad": 50,
-            "temperatura": 20,
-            "precipitacion": 150,
-            "horas_de_sol": 8,
-            "tipo_de_suelo": "arcilloso",
-            "temporada": "verano"
+            "humidity": 50,
+            "temperature": 20,
+            "precipitation": 150,
+            "sun_hours": 8,
+            "soil_type": "arcilloso",
+            "season": "verano"
         }
         
         is_valid, errors = DataValidator.validate_terrain_params(valid_params)
@@ -22,12 +22,12 @@ class TestDataValidator:
     def test_validate_terrain_params_invalid_ph(self):
         invalid_params = {
             "ph": 10.0,
-            "humedad": 50,
-            "temperatura": 20,
-            "precipitacion": 150,
-            "horas_de_sol": 8,
-            "tipo_de_suelo": "arcilloso",
-            "temporada": "verano"
+            "humidity": 50,
+            "temperature": 20,
+            "precipitation": 150,
+            "sun_hours": 8,
+            "soil_type": "arcilloso",
+            "season": "verano"
         }
         
         is_valid, errors = DataValidator.validate_terrain_params(invalid_params)
@@ -38,12 +38,12 @@ class TestDataValidator:
     def test_validate_terrain_params_invalid_soil_type(self):
         invalid_params = {
             "ph": 6.5,
-            "humedad": 50,
-            "temperatura": 20,
-            "precipitacion": 150,
-            "horas_de_sol": 8,
-            "tipo_de_suelo": "invalido",
-            "temporada": "verano"
+            "humidity": 50,
+            "temperature": 20,
+            "precipitation": 150,
+            "sun_hours": 8,
+            "soil_type": "invalido",
+            "season": "verano"
         }
         
         is_valid, errors = DataValidator.validate_terrain_params(invalid_params)
@@ -114,12 +114,12 @@ class TestModelValidator:
         mock_model = MockModel()
         test_data = pd.DataFrame({
             "ph": [6.5],
-            "humedad": [50],
-            "temperatura": [20],
-            "precipitacion": [150],
-            "horas_de_sol": [8],
-            "tipo_de_suelo": ["arcilloso"],
-            "temporada": ["verano"]
+            "humidity": [50],
+            "temperature": [20],
+            "precipitation": [150],
+            "sun_hours": [8],
+            "soil_type": ["arcilloso"],
+            "season": ["verano"]
         })
         
         is_valid, errors = ModelValidator.validate_model_prediction(mock_model, test_data)
@@ -134,12 +134,12 @@ class TestModelValidator:
         mock_model = MockModel()
         test_data = pd.DataFrame({
             "ph": [6.5],
-            "humedad": [50],
-            "temperatura": [20],
-            "precipitacion": [150],
-            "horas_de_sol": [8],
-            "tipo_de_suelo": ["arcilloso"],
-            "temporada": ["verano"]
+            "humidity": [50],
+            "temperature": [20],
+            "precipitation": [150],
+            "sun_hours": [8],
+            "soil_type": ["arcilloso"],
+            "season": ["verano"]
         })
         
         is_valid, errors = ModelValidator.validate_model_prediction(mock_model, test_data)

@@ -16,10 +16,10 @@ APP_CONFIG = {
 
 TERRAIN_PARAMS = {
     "ph": {"min": 4.5, "max": 8.5, "default": 6.5, "step": 0.1},
-    "humedad": {"min": 0, "max": 100, "default": 50, "step": 1},
-    "temperatura": {"min": 0, "max": 40, "default": 20, "step": 1},
-    "precipitacion": {"min": 0, "max": 300, "default": 150, "step": 5},
-    "horas_de_sol": {"min": 0.0, "max": 16.0, "default": 8.0, "step": 0.5}
+    "humidity": {"min": 0, "max": 100, "default": 50, "step": 1},
+    "temperature": {"min": 0, "max": 40, "default": 20, "step": 1},
+    "precipitation": {"min": 0, "max": 300, "default": 150, "step": 5},
+    "sun_hours": {"min": 0.0, "max": 16.0, "default": 8.0, "step": 0.5}
 }
 
 SOIL_TYPES = ["arcilloso", "arenoso", "limoso", "rocoso"]

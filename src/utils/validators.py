@@ -11,22 +11,22 @@ class DataValidator:
         if not TERRAIN_PARAMS["ph"]["min"] <= params.get("ph", 0) <= TERRAIN_PARAMS["ph"]["max"]:
             errors.append(f"pH must be between {TERRAIN_PARAMS['ph']['min']} and {TERRAIN_PARAMS['ph']['max']}")
         
-        if not TERRAIN_PARAMS["humedad"]["min"] <= params.get("humedad", -1) <= TERRAIN_PARAMS["humedad"]["max"]:
-            errors.append(f"Humidity must be between {TERRAIN_PARAMS['humedad']['min']} and {TERRAIN_PARAMS['humedad']['max']}")
+        if not TERRAIN_PARAMS["humidity"]["min"] <= params.get("humidity", -1) <= TERRAIN_PARAMS["humidity"]["max"]:
+            errors.append(f"Humidity must be between {TERRAIN_PARAMS['humidity']['min']} and {TERRAIN_PARAMS['humidity']['max']}")
         
-        if not TERRAIN_PARAMS["temperatura"]["min"] <= params.get("temperatura", -1) <= TERRAIN_PARAMS["temperatura"]["max"]:
-            errors.append(f"Temperature must be between {TERRAIN_PARAMS['temperatura']['min']} and {TERRAIN_PARAMS['temperatura']['max']}")
+        if not TERRAIN_PARAMS["temperature"]["min"] <= params.get("temperature", -1) <= TERRAIN_PARAMS["temperature"]["max"]:
+            errors.append(f"Temperature must be between {TERRAIN_PARAMS['temperature']['min']} and {TERRAIN_PARAMS['temperature']['max']}")
         
-        if not TERRAIN_PARAMS["precipitacion"]["min"] <= params.get("precipitacion", -1) <= TERRAIN_PARAMS["precipitacion"]["max"]:
-            errors.append(f"Precipitation must be between {TERRAIN_PARAMS['precipitacion']['min']} and {TERRAIN_PARAMS['precipitacion']['max']}")
+        if not TERRAIN_PARAMS["precipitation"]["min"] <= params.get("precipitation", -1) <= TERRAIN_PARAMS["precipitation"]["max"]:
+            errors.append(f"Precipitation must be between {TERRAIN_PARAMS['precipitation']['min']} and {TERRAIN_PARAMS['precipitation']['max']}")
         
-        if not TERRAIN_PARAMS["horas_de_sol"]["min"] <= params.get("horas_de_sol", -1) <= TERRAIN_PARAMS["horas_de_sol"]["max"]:
-            errors.append(f"Sun hours must be between {TERRAIN_PARAMS['horas_de_sol']['min']} and {TERRAIN_PARAMS['horas_de_sol']['max']}")
+        if not TERRAIN_PARAMS["sun_hours"]["min"] <= params.get("sun_hours", -1) <= TERRAIN_PARAMS["sun_hours"]["max"]:
+            errors.append(f"Sun hours must be between {TERRAIN_PARAMS['sun_hours']['min']} and {TERRAIN_PARAMS['sun_hours']['max']}")
         
-        if params.get("tipo_de_suelo") not in SOIL_TYPES:
+        if params.get("soil_type") not in SOIL_TYPES:
             errors.append(f"Soil type must be one of: {', '.join(SOIL_TYPES)}")
         
-        if params.get("temporada") not in SEASONS:
+        if params.get("season") not in SEASONS:
             errors.append(f"Season must be one of: {', '.join(SEASONS)}")
         
         return len(errors) == 0, errors

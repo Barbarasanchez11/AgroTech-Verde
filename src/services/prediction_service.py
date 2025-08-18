@@ -25,7 +25,42 @@ class PredictionService:
         self.preprocessor = None
         self.is_loaded = False
         self.auto_train_if_needed()
-    
+
+    def _get_preprocessor_expected_columns(self) -> Optional[list]:
+        try:
+            if hasattr(self.preprocessor, 'transformers_'):
+                expected_cols = []
+                for name, transformer, cols in self.preprocessor.transformers_:
+                    if isinstance(cols, list):
+                        expected_cols.extend(cols)
+                return expected_cols
+            return None
+        except Exception:
+            return None
+
+    def _align_columns_to_preprocessor(self, df: pd.DataFrame) -> pd.DataFrame:
+        english_to_spanish = {
+            'humidity': 'humedad',
+            'temperature': 'temperatura',
+            'precipitation': 'precipitacion',
+            'sun_hours': 'horas_de_sol',
+            'soil_type': 'tipo_de_suelo',
+            'season': 'temporada',
+            'crop_type': 'tipo_de_cultivo'
+        }
+        spanish_to_english = {v: k for k, v in english_to_spanish.items()}
+
+        expected_cols = self._get_preprocessor_expected_columns() or []
+        expects_spanish = any(col in expected_cols for col in english_to_spanish.values())
+        expects_english = any(col in expected_cols for col in ['humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season'])
+
+        aligned_df = df.copy()
+        if expects_spanish:
+            aligned_df = aligned_df.rename(columns=english_to_spanish)
+        elif expects_english:
+            aligned_df = aligned_df.rename(columns=spanish_to_english)
+        return aligned_df
+
     def load_models(self) -> bool:
         try:
             from config.config import get_model_path
@@ -107,13 +142,14 @@ class PredictionService:
                 logger.error("Preprocessor is None after loading")
                 return False, "Preprocessor error", "Preprocessor is not available"
 
-            feature_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
-            df = pd.DataFrame([terrain_params])[feature_columns]
+            
+            df_input = pd.DataFrame([terrain_params])
+            df = self._align_columns_to_preprocessor(df_input)
             logger.info(f"Prediction input: {terrain_params}")
             
             try:
                 logger.info("Processing data with preprocessor...")
-                logger.info(f"Input columns: {list(df.columns)}")
+                logger.info(f"Aligned input columns: {list(df.columns)}")
                 logger.info(f"Input data sample: {df.iloc[0].to_dict()}")
                 
                 df_processed = self.preprocessor.transform(df)

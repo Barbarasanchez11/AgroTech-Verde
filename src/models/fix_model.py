@@ -41,12 +41,12 @@ def clean_dataset():
         
         expected_crops = ['arroz', 'lentejas', 'maiz', 'naranjas', 'soja', 'trigo', 'uva', 'zanahoria']
         
-        df['tipo_de_cultivo'] = df['tipo_de_cultivo'].apply(normalize_text)
+        df['crop_type'] = df['crop_type'].apply(normalize_text)
         
-        df_clean = df[df['tipo_de_cultivo'].isin(expected_crops)].copy()
+        df_clean = df[df['crop_type'].isin(expected_crops)].copy()
         
         logger.info(f"Cleaned dataset: {df_clean.shape}")
-        logger.info(f"Unique crops after cleaning: {sorted(df_clean['tipo_de_cultivo'].unique())}")
+        logger.info(f"Unique crops after cleaning: {sorted(df_clean['crop_type'].unique())}")
         
         return df_clean
         

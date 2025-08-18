@@ -93,12 +93,12 @@ def test_prediction():
         
         test_params = {
             "ph": 6.5,
-            "humedad": 50,
-            "temperatura": 20,
-            "precipitacion": 150,
-            "horas_de_sol": 8.0,
-            "tipo_de_suelo": "arcilloso",
-            "temporada": "verano"
+                    "humidity": 50,
+        "temperature": 20,
+        "precipitation": 150,
+        "sun_hours": 8.0,
+        "soil_type": "arcilloso",
+        "season": "verano"
         }
         
         print(f"   Test parameters: {test_params}")

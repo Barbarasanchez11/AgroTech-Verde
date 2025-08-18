@@ -30,8 +30,8 @@ class CropModelTrainer:
         self._initialize_preprocessor()
 
     def _initialize_preprocessor(self):
-        numeric_columns = ["ph", "humedad", "temperatura", "precipitacion", "horas_de_sol"]
-        categorical_columns = ["tipo_de_suelo", "temporada"]
+        numeric_columns = ["ph", "humidity", "temperature", "precipitation", "sun_hours"]
+        categorical_columns = ["soil_type", "season"]
 
         self.preprocessor = ColumnTransformer(transformers=[
             ("numeric", StandardScaler(), numeric_columns),
@@ -66,14 +66,14 @@ class CropModelTrainer:
             return pd.DataFrame()
 
     def validate_data(self, df: pd.DataFrame) -> bool:
-        required_columns = ["tipo_de_cultivo", "ph", "humedad", "temperatura", "precipitacion", "horas_de_sol", "tipo_de_suelo", "temporada"]
+        required_columns = ["crop_type", "ph", "humidity", "temperature", "precipitation", "sun_hours", "soil_type", "season"]
         
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             logger.error(f"Missing required columns: {missing_columns}")
             return False
         
-        numeric_columns = ["ph", "humedad", "temperatura", "precipitacion", "horas_de_sol"]
+        numeric_columns = ["ph", "humidity", "temperature", "precipitation", "sun_hours"]
         for col in numeric_columns:
             if not pd.api.types.is_numeric_dtype(df[col]):
                 logger.error(f"Column {col} is not numeric")
@@ -92,9 +92,9 @@ class CropModelTrainer:
 
         try:
             self.label_encoder = LabelEncoder()
-            df["crop_code"] = self.label_encoder.fit_transform(df["tipo_de_cultivo"])
-
-            X = df.drop(columns=["tipo_de_cultivo", "crop_code"])
+                    df["crop_code"] = self.label_encoder.fit_transform(df["crop_type"])
+        
+        X = df.drop(columns=["crop_type", "crop_code"])
             y = df["crop_code"]
 
             return X, y
@@ -218,14 +218,14 @@ class CropModelTrainer:
             return False
 
     def validate_prediction_input(self, input_data: Dict[str, Any]) -> bool:
-        required_fields = ["ph", "humedad", "temperatura", "precipitacion", "horas_de_sol", "tipo_de_suelo", "temporada"]
+        required_fields = ["ph", "humidity", "temperature", "precipitation", "sun_hours", "soil_type", "season"]
         
         missing_fields = [field for field in required_fields if field not in input_data]
         if missing_fields:
             logger.error(f"Missing required fields for prediction: {missing_fields}")
             return False
         
-        numeric_fields = ["ph", "humedad", "temperatura", "precipitacion", "horas_de_sol"]
+        numeric_fields = ["ph", "humidity", "temperature", "precipitation", "sun_hours"]
         for field in numeric_fields:
             if not isinstance(input_data[field], (int, float)):
                 logger.error(f"Field {field} must be numeric")
@@ -261,8 +261,8 @@ class CropModelTrainer:
                 logger.error(f"Invalid DataFrame: {'; '.join(errors)}")
                 return False
             
-            X = df.drop(columns=["tipo_de_cultivo"])
-            y = df["tipo_de_cultivo"]
+                    X = df.drop(columns=["crop_type"])
+        y = df["crop_type"]
             
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=ML_CONFIG["test_size"], 

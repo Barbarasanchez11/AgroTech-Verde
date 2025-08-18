@@ -36,8 +36,8 @@ class ModelTrainer:
             if not is_valid:
                 raise ValueError(f"Invalid data: {'; '.join(errors)}")
             
-            X = df.drop(columns=["tipo_de_cultivo"])
-            y = df["tipo_de_cultivo"]
+                X = df.drop(columns=["crop_type"])
+    y = df["crop_type"]
             
             logger.info(f"Features shape: {X.shape}, Target shape: {y.shape}")
             return X, y
@@ -47,8 +47,8 @@ class ModelTrainer:
             raise
     
     def create_preprocessor(self) -> ColumnTransformer:
-        numeric_columns = ["ph", "humedad", "temperatura", "precipitacion", "horas_de_sol"]
-        categorical_columns = ["tipo_de_suelo", "temporada"]
+            numeric_columns = ["ph", "humidity", "temperature", "precipitation", "sun_hours"]
+    categorical_columns = ["soil_type", "season"]
         
         preprocessor = ColumnTransformer(
             transformers=[

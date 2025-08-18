@@ -37,7 +37,7 @@ class SmartRetrainingService:
             
            
             df = pd.DataFrame(normalized_crops)
-            crop_groups = df.groupby('tipo_de_cultivo')
+            crop_groups = df.groupby('crop_type')
             
             collected_data = {}
             for crop_name, group in crop_groups:
@@ -70,13 +70,13 @@ class SmartRetrainingService:
                 for record in records:
                     new_record = {
                         'ph': record['ph'],
-                        'humedad': record['humedad'],
-                        'temperatura': record['temperatura'],
-                        'precipitacion': record['precipitacion'],
-                        'horas_de_sol': record['horas_de_sol'],
-                        'tipo_de_suelo': record['tipo_de_suelo'],
-                        'temporada': record['temporada'],
-                        'tipo_de_cultivo': crop_name 
+                        'humidity': record['humidity'],
+                        'temperature': record['temperature'],
+                        'precipitation': record['precipitation'],
+                        'sun_hours': record['sun_hours'],
+                        'soil_type': record['soil_type'],
+                        'season': record['season'],
+                        'crop_type': crop_name
                     }
                     new_records.append(new_record)
             
@@ -105,16 +105,16 @@ class SmartRetrainingService:
 
         try:
             
-            required_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada', 'tipo_de_cultivo']
+            required_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season', 'crop_type']
             missing_columns = [col for col in required_columns if col not in df.columns]
             if missing_columns:
-                logger.error(f"Columnas faltantes: {missing_columns}")
-                logger.error(f"Columnas disponibles: {list(df.columns)}")
+                logger.error(f"Missing columns: {missing_columns}")
+                logger.error(f"Available columns: {list(df.columns)}")
                 return None, None, None, None
             
-            feature_columns = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
+            feature_columns = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season']
             X = df[feature_columns]
-            y = df['tipo_de_cultivo']
+            y = df['crop_type']
             
         
             if X.isnull().any().any() or y.isnull().any():
@@ -122,8 +122,8 @@ class SmartRetrainingService:
                 return None, None, None, None
             
            
-            numeric_features = ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol']
-            categorical_features = ['tipo_de_suelo', 'temporada']
+            numeric_features = ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours']
+            categorical_features = ['soil_type', 'season']
             
             preprocessor = ColumnTransformer(
                 transformers=[
@@ -277,13 +277,13 @@ class SmartRetrainingService:
                 if not crop.get('is_prediction', False):
                     new_record = {
                         'ph': float(crop['ph']),
-                        'humedad': float(crop['humedad']),
-                        'temperatura': float(crop['temperatura']),
-                        'precipitacion': float(crop['precipitacion']),
-                        'horas_de_sol': float(crop['horas_de_sol']),
-                        'tipo_de_suelo': str(crop['tipo_de_suelo']),
-                        'temporada': str(crop['temporada']),
-                        'tipo_de_cultivo': str(crop['tipo_de_cultivo'])
+                        'humidity': float(crop['humidity']),
+                        'temperature': float(crop['temperature']),
+                        'precipitation': float(crop['precipitation']),
+                        'sun_hours': float(crop['sun_hours']),
+                        'soil_type': str(crop['soil_type']),
+                        'season': str(crop['season']),
+                        'crop_type': str(crop['crop_type'])
                     }
                     new_records.append(new_record)
             
@@ -355,7 +355,7 @@ class SmartRetrainingService:
             
             for crop in new_crops:
                 if not crop.get('is_prediction', False):
-                    unique_crops.add(crop['tipo_de_cultivo'].lower().strip())
+                    unique_crops.add(crop['crop_type'].lower().strip())
                     total_examples += 1
             
            

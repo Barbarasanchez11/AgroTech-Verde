@@ -12,6 +12,38 @@ class SupabaseService:
         self._initialization_error = None
         self._initialize()
     
+  
+    COLUMN_MAPPING = {
+        'humidity': 'humedad',
+        'temperature': 'temperatura', 
+        'precipitation': 'precipitacion',
+        'sun_hours': 'horas_de_sol',
+        'soil_type': 'tipo_de_suelo',
+        'season': 'temporada',
+        'crop_type': 'tipo_de_cultivo'
+    }
+    
+    def _map_to_db_columns(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        
+        mapped_data = {}
+        for key, value in data.items():
+            if key in self.COLUMN_MAPPING:
+                mapped_data[self.COLUMN_MAPPING[key]] = value
+            else:
+                mapped_data[key] = value
+        return mapped_data
+    
+    def _map_from_db_columns(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        
+        reverse_mapping = {v: k for k, v in self.COLUMN_MAPPING.items()}
+        mapped_data = {}
+        for key, value in data.items():
+            if key in reverse_mapping:
+                mapped_data[reverse_mapping[key]] = value
+            else:
+                mapped_data[key] = value
+        return mapped_data
+    
     def _initialize(self):
         try:
             from supabase import create_client, Client
@@ -50,7 +82,7 @@ class SupabaseService:
             
             self._initialized = True
             self._initialization_error = None
-            logger.info("✅ Supabase inicializado correctamente")
+            logger.info(" Supabase inicializado correctamente")
             return True
             
         except ImportError as e:
@@ -85,7 +117,10 @@ class SupabaseService:
                 "is_prediction": False
             }
             
-            result = self.supabase.table('crops').insert(crop_data_with_timestamp).execute()
+            
+            db_crop_data = self._map_to_db_columns(crop_data_with_timestamp)
+            
+            result = self.supabase.table('crops').insert(db_crop_data).execute()
             
             if result.data and len(result.data) > 0:
                 logger.info(f"Crop saved successfully: {result.data[0].get('id')}")
@@ -97,11 +132,11 @@ class SupabaseService:
                 
                 return True
             else:
-                logger.error("❌ No se recibieron datos después de insertar")
+                logger.error(" No se recibieron datos después de insertar")
                 return False
                 
         except Exception as e:
-            logger.error(f"❌ Error guardando cultivo: {e}")
+            logger.error(f" Error guardando cultivo: {e}")
             return False
     
     def save_prediction(self, terrain_params: Dict[str, Any], crop: str, confidence: float) -> Dict[str, Any]:
@@ -113,28 +148,31 @@ class SupabaseService:
             
             prediction_data = {
                 **terrain_params,
-                "tipo_de_cultivo": crop,
+                "crop_type": crop,
                 "confidence": confidence,
                 "created_at": datetime.now().isoformat(),
                 "is_prediction": True
             }
             
-            result = self.supabase.table('crops').insert(prediction_data).execute()
+          
+            db_prediction_data = self._map_to_db_columns(prediction_data)
+            
+            result = self.supabase.table('crops').insert(db_prediction_data).execute()
             
             if result.data and len(result.data) > 0:
-                logger.info(f"✅ Predicción guardada exitosamente: {result.data[0].get('id')}")
+                logger.info(f" Predicción guardada exitosamente: {result.data[0].get('id')}")
                 return {
                     "success": True, 
                     "data": result.data[0],
                     "message": "Predicción guardada exitosamente"
                 }
             else:
-                logger.error("❌ No se recibieron datos después de insertar predicción")
+                logger.error(" No se recibieron datos después de insertar predicción")
                 return {"success": False, "error": "No se pudo insertar en la base de datos"}
                 
         except Exception as e:
             error_msg = f"Error guardando predicción: {str(e)}"
-            logger.error(f"❌ {error_msg}")
+            logger.error(f" {error_msg}")
             return {"success": False, "error": error_msg}
     
     def get_all_crops(self) -> List[Dict[str, Any]]:
@@ -143,18 +181,20 @@ class SupabaseService:
                 logger.error(f"No se pudo inicializar Supabase: {self._initialization_error}")
                 return []
             
-            # Seleccionar todas las columnas EXCEPTO is_prediction (solo para desarrolladores)
+           
             result = self.supabase.table('crops').select('id, ph, humedad, temperatura, precipitacion, horas_de_sol, tipo_de_suelo, temporada, tipo_de_cultivo, created_at, confidence').order('created_at', desc=True).execute()
             
             if result.data:
-                logger.info(f"✅ Obtenidos {len(result.data)} cultivos de Supabase")
-                return result.data
+                logger.info(f" Obtenidos {len(result.data)} cultivos de Supabase")
+                
+                mapped_data = [self._map_from_db_columns(crop) for crop in result.data]
+                return mapped_data
             else:
-                logger.info("📭 No se encontraron cultivos en la base de datos")
+                logger.info(" No se encontraron cultivos en la base de datos")
                 return []
                 
         except Exception as e:
-            logger.error(f"❌ Error obteniendo cultivos: {e}")
+            logger.error(f" Error obteniendo cultivos: {e}")
             return []
     
     def get_collection_stats(self) -> Dict[str, Any]:
@@ -166,9 +206,9 @@ class SupabaseService:
             total_records = len(crops)
             
             unique_crops = len(set(
-                crop.get('tipo_de_cultivo', '').lower().strip() 
+                crop.get('crop_type', '').lower().strip() 
                 for crop in crops 
-                if crop.get('tipo_de_cultivo')
+                if crop.get('crop_type')
             ))
             
             predictions_count = len([crop for crop in crops if crop.get('is_prediction', False)])
@@ -182,7 +222,7 @@ class SupabaseService:
             }
             
         except Exception as e:
-            logger.error(f"❌ Error obteniendo estadísticas: {e}")
+            logger.error(f" Error obteniendo estadísticas: {e}")
             return {"total_records": 0, "unique_crops": 0, "error": str(e)}
     
     def delete_all_crops(self) -> bool:
@@ -198,11 +238,11 @@ class SupabaseService:
             
             delete_result = self.supabase.table('crops').delete().gte('id', 0).execute()
             
-            logger.info(f"✅ Eliminados {len(result.data)} registros")
+            logger.info(f" Eliminados {len(result.data)} registros")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error eliminando cultivos: {e}")
+            logger.error(f" Error eliminando cultivos: {e}")
             return False
     
     def test_connection(self) -> Dict[str, Any]:
@@ -230,23 +270,23 @@ class SupabaseService:
             } 
     
     def load_initial_data_from_csv(self) -> Dict[str, Any]:
-        """Carga datos iniciales del CSV original si la base de datos está vacía"""
+       
         try:
             if not self._ensure_initialized():
                 return {"success": False, "error": "No se pudo inicializar Supabase"}
             
-            # Verificar si ya hay datos
+            
             existing_data = self.supabase.table('crops').select('id').limit(1).execute()
             if existing_data.data and len(existing_data.data) > 0:
-                logger.info("✅ Base de datos ya tiene datos, no se cargan datos iniciales")
+                logger.info(" Base de datos ya tiene datos, no se cargan datos iniciales")
                 return {"success": True, "message": "Base de datos ya tiene datos", "loaded": 0}
             
-            # Cargar datos del CSV
+            
             import pandas as pd
             import os
             from pathlib import Path
             
-            # Ruta al CSV (desde la raíz del proyecto)
+            
             csv_path = Path(__file__).parent.parent.parent / "data" / "agroTech_data.csv"
             
             if not csv_path.exists():
@@ -254,27 +294,28 @@ class SupabaseService:
             
             # Leer CSV
             df = pd.read_csv(csv_path)
-            logger.info(f"📊 CSV cargado: {len(df)} registros")
+            logger.info(f" CSV cargado: {len(df)} registros")
             
-            # Preparar datos para inserción
+           
             crops_to_insert = []
             for _, row in df.iterrows():
                 crop_data = {
                     "ph": float(row['ph']),
-                    "humedad": float(row['humedad']),
-                    "temperatura": float(row['temperatura']),
-                    "precipitacion": float(row['precipitacion']),
-                    "horas_de_sol": float(row['horas_de_sol']),
-                    "tipo_de_suelo": str(row['tipo_de_suelo']),
-                    "temporada": str(row['temporada']),
-                    "tipo_de_cultivo": str(row['tipo_de_cultivo']),
+                    "humidity": float(row['humidity']),
+                    "temperature": float(row['temperature']),
+                    "precipitation": float(row['precipitation']),
+                    "sun_hours": float(row['sun_hours']),
+                    "soil_type": str(row['soil_type']),
+                    "season": str(row['season']),
+                    "crop_type": str(row['crop_type']),
                     "created_at": datetime.now().isoformat(),
                     "is_prediction": False,
                     "confidence": None
                 }
-                crops_to_insert.append(crop_data)
-            
-            # Insertar en lotes de 100 para evitar timeouts
+                
+                
+                db_crop_data = self._map_to_db_columns(crop_data)
+                crops_to_insert.append(db_crop_data)
             batch_size = 100
             total_inserted = 0
             
@@ -285,7 +326,7 @@ class SupabaseService:
                     total_inserted += len(result.data)
                     logger.info(f"Lote insertado: {len(result.data)} registros")
                 else:
-                    logger.warning(f"⚠️ Lote {i//batch_size + 1} no se insertó correctamente")
+                    logger.warning(f" Lote {i//batch_size + 1} no se insertó correctamente")
             
             logger.info(f"Datos iniciales cargados: {total_inserted} registros")
             return {
@@ -296,7 +337,7 @@ class SupabaseService:
             
         except Exception as e:
             error_msg = f"Error cargando datos iniciales: {str(e)}"
-            logger.error(f"❌ {error_msg}")
+            logger.error(f"{error_msg}")
             return {"success": False, "error": error_msg}
     
     def _auto_retrain_model(self) -> bool:

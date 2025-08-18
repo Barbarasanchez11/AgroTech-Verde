@@ -77,42 +77,42 @@ def render_terrain_params():
                       value=TERRAIN_PARAMS["ph"]["default"], 
                       step=TERRAIN_PARAMS["ph"]["step"])
         
-        humedad = st.slider("Humedad (%)", 
-                           min_value=TERRAIN_PARAMS["humedad"]["min"], 
-                           max_value=TERRAIN_PARAMS["humedad"]["max"], 
-                           value=TERRAIN_PARAMS["humedad"]["default"], 
-                           step=TERRAIN_PARAMS["humedad"]["step"])
+        humidity = st.slider("Humedad (%)", 
+                           min_value=TERRAIN_PARAMS["humidity"]["min"], 
+                           max_value=TERRAIN_PARAMS["humidity"]["max"], 
+                           value=TERRAIN_PARAMS["humidity"]["default"], 
+                           step=TERRAIN_PARAMS["humidity"]["step"])
         
-        temperatura = st.slider("Temperatura (°C)", 
-                              min_value=TERRAIN_PARAMS["temperatura"]["min"], 
-                              max_value=TERRAIN_PARAMS["temperatura"]["max"], 
-                              value=TERRAIN_PARAMS["temperatura"]["default"], 
-                              step=TERRAIN_PARAMS["temperatura"]["step"])
+        temperature = st.slider("Temperatura (°C)", 
+                              min_value=TERRAIN_PARAMS["temperature"]["min"], 
+                              max_value=TERRAIN_PARAMS["temperature"]["max"], 
+                              value=TERRAIN_PARAMS["temperature"]["default"], 
+                              step=TERRAIN_PARAMS["temperature"]["step"])
         
-        precipitacion = st.slider("Precipitación (mm)", 
-                                 min_value=TERRAIN_PARAMS["precipitacion"]["min"], 
-                                 max_value=TERRAIN_PARAMS["precipitacion"]["max"], 
-                                 value=TERRAIN_PARAMS["precipitacion"]["default"], 
-                                 step=TERRAIN_PARAMS["precipitacion"]["step"])
+        precipitation = st.slider("Precipitación (mm)", 
+                                 min_value=TERRAIN_PARAMS["precipitation"]["min"], 
+                                 max_value=TERRAIN_PARAMS["precipitation"]["max"], 
+                                 value=TERRAIN_PARAMS["precipitation"]["default"], 
+                                 step=TERRAIN_PARAMS["precipitation"]["step"])
     
     with col2:
-        horas_de_sol = st.slider("Horas de sol", 
-                                min_value=TERRAIN_PARAMS["horas_de_sol"]["min"], 
-                                max_value=TERRAIN_PARAMS["horas_de_sol"]["max"], 
-                                value=TERRAIN_PARAMS["horas_de_sol"]["default"], 
-                                step=TERRAIN_PARAMS["horas_de_sol"]["step"])
+        sun_hours = st.slider("Horas de sol", 
+                                min_value=TERRAIN_PARAMS["sun_hours"]["min"], 
+                                max_value=TERRAIN_PARAMS["sun_hours"]["max"], 
+                                value=TERRAIN_PARAMS["sun_hours"]["default"], 
+                                step=TERRAIN_PARAMS["sun_hours"]["step"])
         
-        tipo_de_suelo = st.selectbox("Tipo de suelo", SOIL_TYPES)
-        temporada = st.selectbox("Temporada", SEASONS)
+        soil_type = st.selectbox("Tipo de suelo", SOIL_TYPES)
+        season = st.selectbox("Temporada", SEASONS)
     
     return {
         "ph": ph,
-        "humedad": humedad,
-        "temperatura": temperatura,
-        "precipitacion": precipitacion,
-        "horas_de_sol": horas_de_sol,
-        "tipo_de_suelo": tipo_de_suelo,
-        "temporada": temporada
+        "humidity": humidity,
+        "temperature": temperature,
+        "precipitation": precipitation,
+        "sun_hours": sun_hours,
+        "soil_type": soil_type,
+        "season": season
     }
 
 def handle_prediction(terrain_params: Dict[str, Any]):
@@ -192,12 +192,12 @@ def handle_prediction(terrain_params: Dict[str, Any]):
                     <p><strong>Condiciones ideales detectadas:</strong></p>
                     <ul style="margin: 10px 0; padding-left: 20px;">
                         <li>pH del suelo: <strong>{terrain_params['ph']}</strong></li>
-                        <li>Humedad: <strong>{terrain_params['humedad']}%</strong></li>
-                        <li>Temperatura: <strong>{terrain_params['temperatura']}°C</strong></li>
-                        <li>Precipitación: <strong>{terrain_params['precipitacion']} mm</strong></li>
-                        <li>Horas de sol: <strong>{terrain_params['horas_de_sol']} h</strong></li>
-                        <li>Tipo de suelo: <strong>{terrain_params['tipo_de_suelo']}</strong></li>
-                        <li>Temporada: <strong>{terrain_params['temporada']}</strong></li>
+                                    <li>Humedad: <strong>{terrain_params['humidity']}%</strong></li>
+            <li>Temperatura: <strong>{terrain_params['temperature']}°C</strong></li>
+            <li>Precipitación: <strong>{terrain_params['precipitation']} mm</strong></li>
+            <li>Horas de sol: <strong>{terrain_params['sun_hours']} h</strong></li>
+            <li>Tipo de suelo: <strong>{terrain_params['soil_type']}</strong></li>
+            <li>Temporada: <strong>{terrain_params['season']}</strong></li>
                     </ul>
                     <p style="margin-top: 15px; color: #28a745; font-weight: 600;">
                         **Confianza del modelo:** {confidence:.1f}%
@@ -230,44 +230,44 @@ def render_new_crop_form():
                       step=TERRAIN_PARAMS["ph"]["step"], 
                       key="new_ph")
         
-        humedad = st.slider("Humedad (%)", 
-                           min_value=TERRAIN_PARAMS["humedad"]["min"], 
-                           max_value=TERRAIN_PARAMS["humedad"]["max"], 
-                           value=TERRAIN_PARAMS["humedad"]["default"], 
-                           step=TERRAIN_PARAMS["humedad"]["step"], 
-                           key="new_humedad")
+        humidity = st.slider("Humedad (%)",
+                           min_value=TERRAIN_PARAMS["humidity"]["min"],
+                           max_value=TERRAIN_PARAMS["humidity"]["max"],
+                           value=TERRAIN_PARAMS["humidity"]["default"],
+                           step=TERRAIN_PARAMS["humidity"]["step"],
+                           key="new_humidity")
         
-        temperatura = st.slider("Temperatura (°C)", 
-                              min_value=TERRAIN_PARAMS["temperatura"]["min"], 
-                              max_value=TERRAIN_PARAMS["temperatura"]["max"], 
-                              value=TERRAIN_PARAMS["temperatura"]["default"], 
-                              step=TERRAIN_PARAMS["temperatura"]["step"], 
-                              key="new_temperatura")
+        temperature = st.slider("Temperatura (°C)",
+                              min_value=TERRAIN_PARAMS["temperature"]["min"],
+                              max_value=TERRAIN_PARAMS["temperature"]["max"],
+                              value=TERRAIN_PARAMS["temperature"]["default"],
+                              step=TERRAIN_PARAMS["temperature"]["step"],
+                              key="new_temperature")
         
-        precipitacion = st.slider("Precipitación (mm)", 
-                                 min_value=TERRAIN_PARAMS["precipitacion"]["min"], 
-                                 max_value=TERRAIN_PARAMS["precipitacion"]["max"], 
-                                 value=TERRAIN_PARAMS["precipitacion"]["default"], 
-                                 step=TERRAIN_PARAMS["precipitacion"]["step"], 
-                                 key="new_precipitacion")
+        precipitation = st.slider("Precipitación (mm)",
+                                 min_value=TERRAIN_PARAMS["precipitation"]["min"],
+                                 max_value=TERRAIN_PARAMS["precipitation"]["max"],
+                                 value=TERRAIN_PARAMS["precipitation"]["default"],
+                                 step=TERRAIN_PARAMS["precipitation"]["step"],
+                                 key="new_precipitation")
     
     with col2:
-        horas_de_sol = st.slider("Horas de sol", 
-                                min_value=TERRAIN_PARAMS["horas_de_sol"]["min"], 
-                                max_value=TERRAIN_PARAMS["horas_de_sol"]["max"], 
-                                value=TERRAIN_PARAMS["horas_de_sol"]["default"], 
-                                step=TERRAIN_PARAMS["horas_de_sol"]["step"], 
-                                key="new_horas_de_sol")
+        sun_hours = st.slider("Horas de sol",
+                                min_value=TERRAIN_PARAMS["sun_hours"]["min"],
+                                max_value=TERRAIN_PARAMS["sun_hours"]["max"],
+                                value=TERRAIN_PARAMS["sun_hours"]["default"],
+                                step=TERRAIN_PARAMS["sun_hours"]["step"],
+                                key="new_sun_hours")
         
-        tipo_de_suelo = st.selectbox("Tipo de suelo", SOIL_TYPES, key="new_tipo_de_suelo")
-        temporada = st.selectbox("Temporada", SEASONS, key="new_temporada")
-        tipo_de_cultivo = st.text_input("Tipo de cultivo", key="new_tipo_de_cultivo")
+        soil_type = st.selectbox("Tipo de suelo", SOIL_TYPES, key="new_soil_type")
+        season = st.selectbox("Temporada", SEASONS, key="new_season")
+        crop_type = st.text_input("Tipo de cultivo", key="new_crop_type")
         
-        if tipo_de_cultivo:
+        if crop_type:
             try:
                 from services.crop_normalizer import CropNormalizer
                 normalizer = CropNormalizer()
-                validation = normalizer.validate_crop_name(tipo_de_cultivo)
+                validation = normalizer.validate_crop_name(crop_type)
                 
                 if validation["is_valid"]:
                     if validation["needs_normalization"]:
@@ -279,26 +279,26 @@ def render_new_crop_form():
                 st.warning("No se pudo validar el nombre del cultivo")
     
     if st.button("Guardar Cultivo"):
-        if tipo_de_cultivo:
+        if crop_type:
             try:
                 from services.crop_normalizer import CropNormalizer
                 normalizer = CropNormalizer()
-                normalized_name = normalizer.normalize_crop_name(tipo_de_cultivo)
+                normalized_name = normalizer.normalize_crop_name(crop_type)
                 
                 crop_data = {
                     "ph": ph,
-                    "humedad": humedad,
-                    "temperatura": temperatura,
-                    "precipitacion": precipitacion,
-                    "horas_de_sol": horas_de_sol,
-                    "tipo_de_suelo": tipo_de_suelo,
-                    "temporada": temporada,
-                    "tipo_de_cultivo": normalized_name
+                    "humidity": humidity,
+                    "temperature": temperature,
+                    "precipitation": precipitation,
+                    "sun_hours": sun_hours,
+                    "soil_type": soil_type,
+                    "season": season,
+                    "crop_type": normalized_name
                 }
                 
                 _, database_service = init_services()
                 if database_service.save_crop_data(crop_data):
-                    if normalized_name != tipo_de_cultivo:
+                    if normalized_name != crop_type:
                         st.success(f"Cultivo guardado correctamente como '{normalized_name}'")
                     else:
                         st.success("Cultivo guardado correctamente")
@@ -366,7 +366,7 @@ def render_crops_history():
                         
                         all_crops = database_service.get_all_crops()
                         if all_crops:
-                            original_names = [crop['tipo_de_cultivo'] for crop in all_crops]
+                            original_names = [crop['crop_type'] for crop in all_crops]
                             unique_original = len(set(original_names))
                             unique_normalized = len(normalized_crops)
                             
