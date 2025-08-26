@@ -27,7 +27,6 @@ def init_services():
     try:
         prediction_service = PredictionService()
         database_service = SupabaseService()
-        prediction_service.load_models()
         
         try:
             database_service.ensure_initial_data()
@@ -37,7 +36,6 @@ def init_services():
         return prediction_service, database_service
     except Exception as e:
         logger.error(f"Error initializing services: {e}")
-        st.error("Error al inicializar los servicios. Por favor, recarga la página.")
         return None, None
 
 def load_css():
@@ -55,10 +53,25 @@ def render_sidebar():
         st.markdown("### Clasificador Inteligente de Cultivos")
         st.markdown("Sistema de recomendación de cultivos basado en condiciones ambientales y del suelo.")
         
-        prediction_service, database_service = init_services()
-        model_info = prediction_service.get_model_info()
+        try:
+            prediction_service, database_service = init_services()
+        except Exception as e:
+            logger.error(f"Init services error: {e}")
+            st.warning("Servicios no disponibles")
+            return
         
-        if model_info.get("status") == "loaded":
+        if not prediction_service:
+            st.warning("Servicio de predicción no disponible")
+            return
+        
+        try:
+            model_info = prediction_service.get_model_info()
+        except Exception as e:
+            logger.error(f"get_model_info error: {e}")
+            st.warning("Información del modelo no disponible")
+            return
+        
+        if model_info.get("loaded"):
             available_crops = model_info.get("available_crops", [])
         else:
             st.warning("Modelo no cargado")
@@ -127,18 +140,23 @@ def handle_prediction(terrain_params: Dict[str, Any]):
             for error in errors:
                 st.error(f"- {error}")
             return
-    
+        
         st.markdown("### Parámetros Ingresados")
         params_df = pd.DataFrame([terrain_params])
         st.dataframe(params_df, use_container_width=True, hide_index=True)
         
         prediction_result = prediction_service.predict_crop(terrain_params)
-    
-        success, crop_or_error, error_details = prediction_result
         
-        if success:
-            crop = crop_or_error
-            confidence = 95.0 
+        if not prediction_result.get("success"):
+            st.error(f"Error en la predicción: {prediction_result.get('error', 'Error desconocido')}")
+            if prediction_result.get("details"):
+                st.error(f"Detalles técnicos: {prediction_result.get('details')}")
+            return
+        
+        crop = prediction_result.get("predicted_crop")
+        confidence = prediction_result.get("confidence", 95.0)
+        
+        if crop: 
             
             st.markdown("### Resultado de la Predicción")
             
@@ -216,7 +234,6 @@ def handle_prediction(terrain_params: Dict[str, Any]):
 
 def render_new_crop_form():
     st.markdown("### Agregar Nuevo Cultivo")
-    st.markdown("Ingresa los parámetros del terreno y el tipo de cultivo para expandir la base de datos.")
     
     col1, col2 = st.columns(2)
     
@@ -225,56 +242,57 @@ def render_new_crop_form():
                       min_value=TERRAIN_PARAMS["ph"]["min"], 
                       max_value=TERRAIN_PARAMS["ph"]["max"], 
                       value=TERRAIN_PARAMS["ph"]["default"], 
-                      step=TERRAIN_PARAMS["ph"]["step"], 
+                      step=TERRAIN_PARAMS["ph"]["step"],
                       key="new_ph")
         
-        humidity = st.slider("Humedad (%)",
-                           min_value=TERRAIN_PARAMS["humidity"]["min"],
-                           max_value=TERRAIN_PARAMS["humidity"]["max"],
-                           value=TERRAIN_PARAMS["humidity"]["default"],
+        humidity = st.slider("Humedad (%)", 
+                           min_value=TERRAIN_PARAMS["humidity"]["min"], 
+                           max_value=TERRAIN_PARAMS["humidity"]["max"], 
+                           value=TERRAIN_PARAMS["humidity"]["default"], 
                            step=TERRAIN_PARAMS["humidity"]["step"],
                            key="new_humidity")
         
-        temperature = st.slider("Temperatura (°C)",
-                              min_value=TERRAIN_PARAMS["temperature"]["min"],
-                              max_value=TERRAIN_PARAMS["temperature"]["max"],
-                              value=TERRAIN_PARAMS["temperature"]["default"],
+        temperature = st.slider("Temperatura (°C)", 
+                              min_value=TERRAIN_PARAMS["temperature"]["min"], 
+                              max_value=TERRAIN_PARAMS["temperature"]["max"], 
+                              value=TERRAIN_PARAMS["temperature"]["default"], 
                               step=TERRAIN_PARAMS["temperature"]["step"],
                               key="new_temperature")
         
-        precipitation = st.slider("Precipitación (mm)",
-                                 min_value=TERRAIN_PARAMS["precipitation"]["min"],
-                                 max_value=TERRAIN_PARAMS["precipitation"]["max"],
-                                 value=TERRAIN_PARAMS["precipitation"]["default"],
+        precipitation = st.slider("Precipitación (mm)", 
+                                 min_value=TERRAIN_PARAMS["precipitation"]["min"], 
+                                 max_value=TERRAIN_PARAMS["precipitation"]["max"], 
+                                 value=TERRAIN_PARAMS["precipitation"]["default"], 
                                  step=TERRAIN_PARAMS["precipitation"]["step"],
                                  key="new_precipitation")
     
     with col2:
-        sun_hours = st.slider("Horas de sol",
-                                min_value=TERRAIN_PARAMS["sun_hours"]["min"],
-                                max_value=TERRAIN_PARAMS["sun_hours"]["max"],
-                                value=TERRAIN_PARAMS["sun_hours"]["default"],
+        sun_hours = st.slider("Horas de sol", 
+                                min_value=TERRAIN_PARAMS["sun_hours"]["min"], 
+                                max_value=TERRAIN_PARAMS["sun_hours"]["max"], 
+                                value=TERRAIN_PARAMS["sun_hours"]["default"], 
                                 step=TERRAIN_PARAMS["sun_hours"]["step"],
                                 key="new_sun_hours")
         
         soil_type = st.selectbox("Tipo de suelo", SOIL_TYPES, key="new_soil_type")
         season = st.selectbox("Temporada", SEASONS, key="new_season")
-        crop_type = st.text_input("Tipo de cultivo", key="new_crop_type")
-        
-        if crop_type:
-            try:
-                from src.services.crop_normalizer import CropNormalizer
-                normalizer = CropNormalizer()
-                validation = normalizer.validate_crop_name(crop_type)
+    
+    crop_type = st.text_input("Tipo de cultivo", placeholder="Ej: maíz, trigo, soja...")
+    
+    if crop_type:
+        try:
+            from src.services.crop_normalizer import CropNormalizer
+            normalizer = CropNormalizer()
+            validation = normalizer.validate_crop_name(crop_type)
+            
+            if validation["is_valid"]:
+                if validation["needs_normalization"]:
+                    pass
+            else:
+                st.error(f"{validation['error']}")
                 
-                if validation["is_valid"]:
-                    if validation["needs_normalization"]:
-                        pass
-                else:
-                    st.error(f"{validation['error']}")
-                    
-            except Exception as e:
-                st.warning("No se pudo validar el nombre del cultivo")
+        except Exception as e:
+            st.warning("No se pudo validar el nombre del cultivo")
     
     if st.button("Guardar Cultivo"):
         if crop_type:
@@ -373,7 +391,6 @@ def render_crops_history():
                     except Exception as e:
                         st.info(f"Cultivos disponibles: {', '.join(status['available_crops'])}")
                         st.error(f"Error en normalización: {str(e)}")
-                
                 else:
                     st.error(f"Error en servicio: {status.get('error')}")
                 

@@ -2,6 +2,7 @@ import os
 import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+from src.config.config import COLUMN_MAPPING
 
 logger = logging.getLogger(__name__)
 
@@ -12,16 +13,8 @@ class SupabaseService:
         self._initialization_error = None
         self._initialize()
     
-  
-    COLUMN_MAPPING = {
-        'humidity': 'humedad',
-        'temperature': 'temperatura', 
-        'precipitation': 'precipitacion',
-        'sun_hours': 'horas_de_sol',
-        'soil_type': 'tipo_de_suelo',
-        'season': 'temporada',
-        'crop_type': 'tipo_de_cultivo'
-    }
+    # Usar el mapeo centralizado de config.py
+    COLUMN_MAPPING = COLUMN_MAPPING
     
     def _map_to_db_columns(self, data: Dict[str, Any]) -> Dict[str, Any]:
         

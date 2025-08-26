@@ -93,7 +93,7 @@ class CropModelTrainer:
         try:
             self.label_encoder = LabelEncoder()
                     df["crop_code"] = self.label_encoder.fit_transform(df["crop_type"])
-        
+
         X = df.drop(columns=["crop_type", "crop_code"])
             y = df["crop_code"]
 

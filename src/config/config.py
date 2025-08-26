@@ -25,6 +25,33 @@ TERRAIN_PARAMS = {
 SOIL_TYPES = ["arcilloso", "arenoso", "limoso", "rocoso"]
 SEASONS = ['verano', 'otoño', 'invierno', 'primavera']
 
+# Mapeo centralizado de columnas para evitar inconsistencias
+COLUMN_MAPPING = {
+    'humidity': 'humedad',
+    'temperature': 'temperatura',
+    'precipitation': 'precipitacion',
+    'sun_hours': 'horas_de_sol',
+    'soil_type': 'tipo_de_suelo',
+    'season': 'temporada',
+    'crop_type': 'tipo_de_cultivo'
+}
+
+# Columnas estándar en inglés
+STANDARD_COLUMNS = {
+    'numeric_features': ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours'],
+    'categorical_features': ['soil_type', 'season'],
+    'target_column': 'crop_type',
+    'all_features': ['ph', 'humidity', 'temperature', 'precipitation', 'sun_hours', 'soil_type', 'season']
+}
+
+# Columnas estándar en español
+SPANISH_COLUMNS = {
+    'numeric_features': ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol'],
+    'categorical_features': ['tipo_de_suelo', 'temporada'],
+    'target_column': 'tipo_de_cultivo',
+    'all_features': ['ph', 'humedad', 'temperatura', 'precipitacion', 'horas_de_sol', 'tipo_de_suelo', 'temporada']
+}
+
 ML_CONFIG = {
     "test_size": 0.2,
     "random_state": 42,
