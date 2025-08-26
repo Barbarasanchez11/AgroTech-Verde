@@ -4,8 +4,18 @@ from typing import Dict, Any
 import logging
 import warnings
 import os
+import sys
+from pathlib import Path
 
 warnings.filterwarnings('ignore')
+
+# Shim para permitir `streamlit run src/app.py` añadiendo el raíz del proyecto al sys.path
+try:
+    PROJECT_ROOT = Path(__file__).resolve().parents[1]
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+except Exception:
+    pass
 
 os.environ['STREAMLIT_SERVER_ENABLE_CORS'] = 'true'
 os.environ['STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION'] = 'true'
