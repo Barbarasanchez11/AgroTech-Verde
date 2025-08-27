@@ -182,15 +182,9 @@ def handle_prediction(terrain_params: Dict[str, Any]):
             ">
                 <h2 style="margin: 0; font-size: 2.5rem;"> {crop.upper()}</h2>
                 <p style="font-size: 1.2rem; margin: 10px 0;">Cultivo Recomendado</p>
-                <div style="
-                    background: rgba(255,255,255,0.2);
-                    padding: 10px 20px;
-                    border-radius: 25px;
-                    display: inline-block;
-                    margin-top: 15px;
-                ">
-                    <strong>Confianza: {confidence:.1f}%</strong>
-                </div>
+               
+                   
+                
             </div>
             """, unsafe_allow_html=True)
         
@@ -202,35 +196,7 @@ def handle_prediction(terrain_params: Dict[str, Any]):
                 logger.error(f"Error saving to Supabase: {e}")
                 st.error("**Error al guardar la predicción** - Intenta nuevamente")
             
-            st.markdown("### Información del Cultivo")
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                border: 1px solid #dee2e6;
-                border-radius: 12px;
-                padding: 20px;
-                margin: 20px 0;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            ">
-                <h4 style="color: #495057; margin: 0 0 15px 0;">**{crop.capitalize()}** - Cultivo Recomendado</h4>
-                <div style="color: #6c757d; line-height: 1.6;">
-                    <p><strong>Condiciones ideales detectadas:</strong></p>
-                    <ul style="margin: 10px 0; padding-left: 20px;">
-                        <li>pH del suelo: <strong>{terrain_params['ph']}</strong></li>
-                                    <li>Humedad: <strong>{terrain_params['humidity']}%</strong></li>
-            <li>Temperatura: <strong>{terrain_params['temperature']}°C</strong></li>
-            <li>Precipitación: <strong>{terrain_params['precipitation']} mm</strong></li>
-            <li>Horas de sol: <strong>{terrain_params['sun_hours']} h</strong></li>
-            <li>Tipo de suelo: <strong>{terrain_params['soil_type']}</strong></li>
-            <li>Temporada: <strong>{terrain_params['season']}</strong></li>
-                    </ul>
-                    <p style="margin-top: 15px; color: #28a745; font-weight: 600;">
-                        **Confianza del modelo:** {confidence:.1f}%
-                    </p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+
             
         else:
             st.error(f"Error en la predicción: {crop_or_error}")
@@ -359,7 +325,7 @@ def render_crops_history():
                 st.metric("Tipos de Cultivo", stats.get("unique_crops", 0))
             with col3:
                 predictions = [crop for crop in crops_data if crop.get('is_prediction', False)]
-                st.metric("Predicciones Guardadas", len(predictions))
+               
         
         try:
             display_df = df.copy()
@@ -367,10 +333,10 @@ def render_crops_history():
                 'humidity': 'humedad',
                 'temperature': 'temperatura',
                 'precipitation': 'precipitacion',
-                'sun_hours': 'horas_de_sol',
-                'soil_type': 'tipo_de_suelo',
+                'sun_hours': 'horas de sol',
+                'soil_type': 'tipo de suelo',
                 'season': 'temporada',
-                'crop_type': 'tipo_de_cultivo'
+                'crop_type': 'tipo de cultivo'
             }
             cols_to_drop = [c for c in ['created_at', 'confidence'] if c in display_df.columns]
             if cols_to_drop:
@@ -378,7 +344,7 @@ def render_crops_history():
             display_df = display_df.rename(columns=rename_map)
             preferred_order = [
                 'id', 'ph', 'humedad', 'temperatura', 'precipitacion',
-                'horas_de_sol', 'tipo_de_suelo', 'temporada', 'tipo_de_cultivo'
+                'horas de sol', 'tipo de suelo', 'temporada', 'tipo de cultivo'
             ]
             existing_order = [c for c in preferred_order if c in display_df.columns]
             remaining_cols = [c for c in display_df.columns if c not in existing_order]
