@@ -361,10 +361,37 @@ def render_crops_history():
                 predictions = [crop for crop in crops_data if crop.get('is_prediction', False)]
                 st.metric("Predicciones Guardadas", len(predictions))
         
-        st.dataframe(
-            df.style.background_gradient(cmap='Greens'),
-            use_container_width=True
-        )
+        try:
+            display_df = df.copy()
+            rename_map = {
+                'humidity': 'humedad',
+                'temperature': 'temperatura',
+                'precipitation': 'precipitacion',
+                'sun_hours': 'horas_de_sol',
+                'soil_type': 'tipo_de_suelo',
+                'season': 'temporada',
+                'crop_type': 'tipo_de_cultivo'
+            }
+            cols_to_drop = [c for c in ['created_at', 'confidence'] if c in display_df.columns]
+            if cols_to_drop:
+                display_df = display_df.drop(columns=cols_to_drop)
+            display_df = display_df.rename(columns=rename_map)
+            preferred_order = [
+                'id', 'ph', 'humedad', 'temperatura', 'precipitacion',
+                'horas_de_sol', 'tipo_de_suelo', 'temporada', 'tipo_de_cultivo'
+            ]
+            existing_order = [c for c in preferred_order if c in display_df.columns]
+            remaining_cols = [c for c in display_df.columns if c not in existing_order]
+            ordered_df = display_df[existing_order + remaining_cols] if existing_order else display_df
+            st.dataframe(
+                ordered_df.style.background_gradient(cmap='Greens'),
+                use_container_width=True
+            )
+        except Exception:
+            st.dataframe(
+                df.style.background_gradient(cmap='Greens'),
+                use_container_width=True
+            )
 
         st.markdown("---")
         st.markdown("## Estado del Sistema Inteligente")
