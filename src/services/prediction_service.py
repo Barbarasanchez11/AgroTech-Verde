@@ -18,14 +18,11 @@ class PredictionService:
         self._load_models()
     
     def _load_models(self) -> bool:
-       
         try:
-            
             model_path = self.models_dir / "modelo_random_forest.pkl"
             encoder_path = self.models_dir / "label_encoder.pkl"
             preprocessor_path = self.models_dir / "preprocessor.pkl"
-            
-            
+
             if not all([model_path.exists(), encoder_path.exists(), preprocessor_path.exists()]):
                 missing_files = []
                 if not model_path.exists():
@@ -34,30 +31,78 @@ class PredictionService:
                     missing_files.append(str(encoder_path))
                 if not preprocessor_path.exists():
                     missing_files.append(str(preprocessor_path))
-                
                 logger.warning(f"Archivos de modelo faltantes: {missing_files}")
+                self.is_loaded = False
                 return False
-            
-            
-            with open(model_path, 'rb') as f:
-                self.model = pickle.load(f)
-            
-           
-            with open(encoder_path, 'rb') as f:
-                self.label_encoder = pickle.load(f)
-            
-          
-            with open(preprocessor_path, 'rb') as f:
-                self.preprocessor = pickle.load(f)
-            
+
+            try:
+                with open(model_path, 'rb') as f:
+                    self.model = pickle.load(f)
+            except Exception as e:
+                logger.error(f"Error cargando modelo: {e}")
+                self.is_loaded = False
+                return False
+
+            try:
+                with open(encoder_path, 'rb') as f:
+                    self.label_encoder = pickle.load(f)
+            except Exception as e:
+                logger.error(f"Error cargando encoder: {e}")
+                self.is_loaded = False
+                return False
+
+            try:
+                with open(preprocessor_path, 'rb') as f:
+                    self.preprocessor = pickle.load(f)
+            except Exception as e:
+                logger.error(f"Error cargando preprocessor: {e}")
+                self.is_loaded = False
+                return False
+
+            try:
+                expected_features = []
+                if hasattr(self.preprocessor, 'transformers_'):
+                    for name, transformer, features in self.preprocessor.transformers_:
+                        if isinstance(features, list):
+                            expected_features.extend(features)
+                        elif isinstance(features, str):
+                            expected_features.append(features)
+
+                if 'humedad' in expected_features or 'temperatura' in expected_features:
+                    test_data = pd.DataFrame([{
+                        'ph': 6.5,
+                        'humedad': 50,
+                        'temperatura': 20,
+                        'precipitacion': 150,
+                        'horas_de_sol': 8.0,
+                        'tipo_de_suelo': 'arcilloso',
+                        'temporada': 'verano'
+                    }])
+                else:
+                    test_data = pd.DataFrame([{
+                        'ph': 6.5,
+                        'humidity': 50,
+                        'temperature': 20,
+                        'precipitation': 150,
+                        'sun_hours': 8.0,
+                        'soil_type': 'clay',
+                        'season': 'summer'
+                    }])
+
+                X_test = self.preprocessor.transform(test_data)
+                _ = self.model.predict(X_test)
+            except Exception as e:
+                logger.error(f"Error validando el modelo cargado: {e}")
+                self.is_loaded = False
+                return False
+
             self.is_loaded = True
-            logger.info(" Todos los modelos cargados exitosamente")
+            logger.info("Todos los modelos cargados y validados")
             logger.info(f"Clases disponibles: {list(self.label_encoder.classes_)}")
-            
             return True
-            
+
         except Exception as e:
-            logger.error(f" Error cargando modelos: {e}")
+            logger.error(f"Error general cargando modelos: {e}")
             self.is_loaded = False
             return False
     
@@ -97,7 +142,7 @@ class PredictionService:
         Predice el mejor cultivo para los parámetros del terreno dados
         """
         try:
-            # Verificar que los modelos estén cargados
+         
             if not self.is_loaded:
                 logger.warning("⚠️ Modelos no cargados, intentando recargar...")
                 if not self._load_models():
