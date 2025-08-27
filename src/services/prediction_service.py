@@ -107,44 +107,37 @@ class PredictionService:
             return False
     
     def _normalize_input_data(self, terrain_params: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Normaliza los datos de entrada usando el mapeo centralizado
-        """
-        # Usar el mapeo centralizado de config.py
+      
         spanish_to_english = COLUMN_MAPPING
         
-        # Crear copia normalizada
+       
         normalized_params = {}
         
         for key, value in terrain_params.items():
-            # Si la clave está en español, convertir a inglés
             if key in spanish_to_english:
                 english_key = spanish_to_english[key]
                 normalized_params[english_key] = value
-                logger.debug(f"🔄 Mapped {key} -> {english_key}")
+                logger.debug(f"Mapped {key} -> {english_key}")
             else:
-                # Mantener la clave original
                 normalized_params[key] = value
         
-        # Asegurar que todas las columnas requeridas estén presentes
+       
         required_features = STANDARD_COLUMNS['all_features']
         
         missing_features = [feature for feature in required_features if feature not in normalized_params]
         if missing_features:
-            logger.error(f"❌ Características faltantes: {missing_features}")
+            logger.error(f" Características faltantes: {missing_features}")
             raise ValueError(f"Faltan las siguientes características: {missing_features}")
         
-        logger.info(f"✅ Datos normalizados correctamente: {list(normalized_params.keys())}")
+        logger.info(f" Datos normalizados correctamente: {list(normalized_params.keys())}")
         return normalized_params
     
     def predict_crop(self, terrain_params: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Predice el mejor cultivo para los parámetros del terreno dados
-        """
+       
         try:
          
             if not self.is_loaded:
-                logger.warning("⚠️ Modelos no cargados, intentando recargar...")
+                logger.warning(" Modelos no cargados, intentando recargar...")
                 if not self._load_models():
                     return {
                         "success": False,
@@ -152,7 +145,7 @@ class PredictionService:
                         "details": "No se pudieron cargar los modelos necesarios para hacer predicciones"
                     }
             
-            # Detectar qué columnas espera el preprocessor
+            
             expected_features = []
             if hasattr(self.preprocessor, 'transformers_'):
                 for name, transformer, features in self.preprocessor.transformers_:
@@ -161,12 +154,12 @@ class PredictionService:
                     elif isinstance(features, str):
                         expected_features.append(features)
             
-            logger.info(f"🔍 Columnas esperadas por el preprocessor: {expected_features}")
+            logger.info(f" Columnas esperadas por el preprocessor: {expected_features}")
             
-            # Mapear datos según las columnas esperadas
+           
             if 'humedad' in expected_features:
-                # El preprocessor espera columnas en español
-                logger.info("🇪🇸 Preprocessor espera columnas en español")
+               
+                logger.info(" Preprocessor espera columnas en español")
                 mapped_params = {
                     'ph': terrain_params.get('ph', 0),
                     'humedad': terrain_params.get('humidity', terrain_params.get('humedad', 0)),
@@ -178,8 +171,8 @@ class PredictionService:
                 }
                 features_order = SPANISH_COLUMNS['all_features']
             else:
-                # El preprocessor espera columnas en inglés
-                logger.info("🇺🇸 Preprocessor espera columnas en inglés")
+               
+                logger.info(" Preprocessor espera columnas en inglés")
                 mapped_params = {
                     'ph': terrain_params.get('ph', 0),
                     'humidity': terrain_params.get('humidity', 0),
@@ -191,14 +184,14 @@ class PredictionService:
                 }
                 features_order = STANDARD_COLUMNS['all_features']
             
-            # Crear DataFrame con el orden correcto de columnas
+          
             input_data = pd.DataFrame([mapped_params])[features_order]
             
-            logger.info(f"📊 Datos de entrada preparados:")
+            logger.info(f" Datos de entrada preparados:")
             logger.info(f"   Columnas: {list(input_data.columns)}")
             logger.info(f"   Valores: {input_data.iloc[0].to_dict()}")
             
-            # Verificar que no haya valores nulos
+            
             if input_data.isnull().any().any():
                 null_columns = input_data.columns[input_data.isnull().any()].tolist()
                 return {
@@ -207,37 +200,37 @@ class PredictionService:
                     "details": f"Columnas con valores nulos: {null_columns}"
                 }
             
-            # Aplicar el preprocessor
+           
             try:
                 X_processed = self.preprocessor.transform(input_data)
-                logger.info(f"✅ Preprocessor aplicado exitosamente: {X_processed.shape}")
+                logger.info(f" Preprocessor aplicado exitosamente: {X_processed.shape}")
             except Exception as prep_error:
-                logger.error(f"❌ Error en preprocessing: {prep_error}")
+                logger.error(f" Error en preprocessing: {prep_error}")
                 return {
                     "success": False,
                     "error": "Error en preprocessing",
                     "details": str(prep_error)
                 }
             
-            # Hacer predicción
+          
             try:
                 prediction_encoded = self.model.predict(X_processed)[0]
                 prediction_proba = self.model.predict_proba(X_processed)[0]
                 
-                # Decodificar predicción
+               
                 predicted_crop = self.label_encoder.inverse_transform([prediction_encoded])[0]
                 confidence = float(np.max(prediction_proba))
                 
-                logger.info(f"🎯 Predicción exitosa:")
+                logger.info(f" Predicción exitosa:")
                 logger.info(f"   Cultivo: {predicted_crop}")
                 logger.info(f"   Confianza: {confidence:.4f}")
                 
-                # Obtener todas las probabilidades para crops alternativos
+                
                 all_probabilities = {}
                 for i, crop_class in enumerate(self.label_encoder.classes_):
                     all_probabilities[crop_class] = float(prediction_proba[i])
                 
-                # Ordenar por probabilidad
+               
                 sorted_crops = sorted(all_probabilities.items(), key=lambda x: x[1], reverse=True)
                 
                 return {
@@ -250,7 +243,7 @@ class PredictionService:
                 }
                 
             except Exception as pred_error:
-                logger.error(f"❌ Error en predicción: {pred_error}")
+                logger.error(f" Error en predicción: {pred_error}")
                 return {
                     "success": False,
                     "error": "Error en predicción",
@@ -258,7 +251,7 @@ class PredictionService:
                 }
                 
         except Exception as e:
-            logger.error(f"❌ Error general en predicción: {e}")
+            logger.error(f" Error general en predicción: {e}")
             import traceback
             logger.error(f"Traceback: {traceback.format_exc()}")
             return {
@@ -268,9 +261,7 @@ class PredictionService:
             }
     
     def get_model_info(self) -> Dict[str, Any]:
-        """
-        Obtiene información sobre el estado de los modelos cargados
-        """
+        
         try:
             if not self.is_loaded:
                 return {
@@ -278,7 +269,7 @@ class PredictionService:
                     "error": "Modelos no cargados"
                 }
             
-            # Información del modelo
+            
             model_info = {
                 "loaded": True,
                 "model_type": type(self.model).__name__,
@@ -286,7 +277,7 @@ class PredictionService:
                 "num_crops": len(self.label_encoder.classes_) if self.label_encoder else 0
             }
             
-            # Información del preprocessor
+            
             if hasattr(self.preprocessor, 'transformers_'):
                 transformers_info = []
                 for name, transformer, features in self.preprocessor.transformers_:
@@ -307,9 +298,7 @@ class PredictionService:
             }
     
     def reload_models(self) -> bool:
-        """
-        Recarga los modelos manualmente
-        """
+        
         logger.info("🔄 Recargando modelos...")
         self.model = None
         self.label_encoder = None
@@ -319,16 +308,14 @@ class PredictionService:
         return self._load_models()
     
     def validate_input_parameters(self, terrain_params: Dict[str, Any]) -> Tuple[bool, List[str]]:
-        """
-        Valida que los parámetros de entrada sean correctos
-        """
+       
         errors = []
         
-        # Parámetros requeridos usando el mapeo centralizado
+      
         required_params_english = STANDARD_COLUMNS['all_features']
         required_params_spanish = SPANISH_COLUMNS['all_features']
         
-        # Verificar si tiene los parámetros en inglés O en español
+       
         has_english = all(param in terrain_params for param in required_params_english)
         has_spanish = all(param in terrain_params for param in required_params_spanish)
         
@@ -337,7 +324,7 @@ class PredictionService:
             missing_spanish = [p for p in required_params_spanish if p not in terrain_params]
             errors.append(f"Faltan parámetros. En inglés: {missing_english} o en español: {missing_spanish}")
         
-        # Validar rangos numéricos
+    
         numeric_validations = {
             'ph': (0, 14, 'pH debe estar entre 0 y 14'),
             'humidity': (0, 100, 'Humedad debe estar entre 0 y 100%'),
@@ -360,7 +347,7 @@ class PredictionService:
                 except (ValueError, TypeError):
                     errors.append(f"{param} debe ser un número válido. Valor recibido: {value}")
         
-        # Validar valores categóricos
+       
         valid_soil_types = ['clay', 'sandy', 'loamy', 'arcilloso', 'arenoso', 'franco']
         valid_seasons = ['spring', 'summer', 'autumn', 'winter', 'primavera', 'verano', 'otoño', 'invierno']
         

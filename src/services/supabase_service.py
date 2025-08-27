@@ -13,7 +13,7 @@ class SupabaseService:
         self._initialization_error = None
         self._initialize()
     
-    # Usar el mapeo centralizado de config.py
+  
     COLUMN_MAPPING = COLUMN_MAPPING
     
     def _map_to_db_columns(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -285,7 +285,7 @@ class SupabaseService:
             if not csv_path.exists():
                 return {"success": False, "error": f"Archivo CSV no encontrado en {csv_path}"}
             
-            # Read CSV
+         
             df = pd.read_csv(csv_path)
             logger.info(f" CSV cargado: {len(df)} registros")
             
