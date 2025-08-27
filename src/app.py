@@ -153,6 +153,18 @@ def handle_prediction(terrain_params: Dict[str, Any]):
         
         st.markdown("### Parámetros Ingresados")
         params_df = pd.DataFrame([terrain_params])
+        
+       
+        rename_map = {
+            'humidity': 'humedad',
+            'temperature': 'temperatura',
+            'precipitation': 'precipitacion',
+            'sun_hours': 'horas de sol',
+            'soil_type': 'tipo de suelo',
+            'season': 'temporada'
+        }
+        params_df = params_df.rename(columns=rename_map)
+        
         st.dataframe(params_df, use_container_width=True, hide_index=True)
         
         prediction_result = prediction_service.predict_crop(terrain_params)
@@ -338,12 +350,12 @@ def render_crops_history():
                 'season': 'temporada',
                 'crop_type': 'tipo de cultivo'
             }
-            cols_to_drop = [c for c in ['created_at', 'confidence'] if c in display_df.columns]
+            cols_to_drop = [c for c in ['id', 'created_at', 'confidence'] if c in display_df.columns]
             if cols_to_drop:
                 display_df = display_df.drop(columns=cols_to_drop)
             display_df = display_df.rename(columns=rename_map)
             preferred_order = [
-                'id', 'ph', 'humedad', 'temperatura', 'precipitacion',
+                'ph', 'humedad', 'temperatura', 'precipitacion',
                 'horas de sol', 'tipo de suelo', 'temporada', 'tipo de cultivo'
             ]
             existing_order = [c for c in preferred_order if c in display_df.columns]
@@ -371,9 +383,35 @@ def render_crops_history():
             if not status.get("error"):
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Ejemplos Disponibles", status['total_examples'])
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                        color: white;
+                        padding: 25px;
+                        border-radius: 15px;
+                        text-align: center;
+                        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                        margin: 10px 0;
+                    ">
+                        <h3 style="margin: 0; font-size: 2rem; font-weight: bold;">{status['total_examples']}</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 1rem; opacity: 0.9;">Ejemplos Disponibles</p>
+                    </div>
+                    """, unsafe_allow_html=True)
                 with col2:
-                    st.metric("Cultivos Únicos", len(status['available_crops']))
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+                        color: white;
+                        padding: 25px;
+                        border-radius: 15px;
+                        text-align: center;
+                        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+                        margin: 10px 0;
+                    ">
+                        <h3 style="margin: 0; font-size: 2rem; font-weight: bold;">{len(status['available_crops'])}</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 1rem; opacity: 0.9;">Cultivos Únicos</p>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 if status['available_crops']:
                     try:
@@ -381,7 +419,29 @@ def render_crops_history():
                         normalizer = CropNormalizer()
                         
                         normalized_crops = sorted(status['available_crops'])
-                        st.info(f"Cultivos disponibles ({len(normalized_crops)}): {', '.join(normalized_crops)}")
+                        
+                        st.markdown(f"""
+                        <div style="
+                            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                            border: 2px solid #28a745;
+                            border-radius: 15px;
+                            padding: 20px;
+                            margin: 20px 0;
+                            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.1);
+                        ">
+                            <h4 style="color: #28a745; margin: 0 0 15px 0; text-align: center; font-weight: bold;">
+                                🌱 Cultivos Disponibles ({len(normalized_crops)})
+                            </h4>
+                            <div style="
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 8px;
+                                justify-content: center;
+                            ">
+                                {''.join([f'<span style="background: #28a745; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; margin: 2px;">{crop}</span>' for crop in normalized_crops])}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
                         
                         all_crops = database_service.get_all_crops()
                         if all_crops:
@@ -390,9 +450,37 @@ def render_crops_history():
                             unique_normalized = len(normalized_crops)
                             
                             if unique_original > unique_normalized:
-                                st.success(f"Sistema de limpieza activo: {unique_original} nombres → {unique_normalized} únicos")
+                                st.markdown(f"""
+                                <div style="
+                                    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+                                    border: 1px solid #28a745;
+                                    border-radius: 10px;
+                                    padding: 15px;
+                                    margin: 10px 0;
+                                    text-align: center;
+                                ">
+                                    <p style="color: #155724; margin: 0; font-weight: 600;">
+                                        ✅ Sistema de limpieza activo: {unique_original} nombres → {unique_normalized} únicos
+                                    </p>
+                                </div>
+                                """, unsafe_allow_html=True)
                     except Exception as e:
-                        st.info(f"Cultivos disponibles: {', '.join(status['available_crops'])}")
+                        st.markdown(f"""
+                        <div style="
+                            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                            border: 2px solid #28a745;
+                            border-radius: 15px;
+                            padding: 20px;
+                            margin: 20px 0;
+                        ">
+                            <h4 style="color: #28a745; margin: 0 0 15px 0; text-align: center;">
+                                🌱 Cultivos Disponibles ({len(status['available_crops'])})
+                            </h4>
+                            <p style="text-align: center; color: #6c757d;">
+                                {', '.join(status['available_crops'])}
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
                         st.error(f"Error en normalización: {str(e)}")
                 else:
                     st.error(f"Error en servicio: {status.get('error')}")
