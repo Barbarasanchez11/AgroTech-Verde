@@ -7,7 +7,7 @@ Sistema inteligente de recomendación de cultivos basado en Machine Learning que
 - **Predicción Inteligente**: Algoritmo de Machine Learning para recomendar cultivos óptimos
 - **Análisis de Condiciones**: Evaluación de pH, humedad, temperatura, precipitación y más
 - **Interfaz Intuitiva**: Dashboard interactivo con Streamlit
-- **Base de Datos en Tiempo Real**: Integración con Firebase para almacenamiento
+- **Base de Datos en Tiempo Real**: Integración con Supabase para almacenamiento
 - **Aprendizaje Continuo**: Sistema que mejora con nuevos datos
 
 ## 📊 Tecnologías Utilizadas
@@ -15,7 +15,7 @@ Sistema inteligente de recomendación de cultivos basado en Machine Learning que
 - **Frontend**: Streamlit
 - **Backend**: Python
 - **Machine Learning**: Scikit-learn, Random Forest, SVM
-- **Base de Datos**: Firebase Firestore
+- **Base de Datos**: Supabase 
 - **Análisis de Datos**: Pandas, NumPy
 - **Visualización**: Matplotlib, Seaborn
 
@@ -25,7 +25,7 @@ Sistema inteligente de recomendación de cultivos basado en Machine Learning que
 
 - Python 3.8+
 - pip
-- Cuenta de Firebase (opcional para funcionalidad completa)
+- Cuenta de Supabase (para funcionalidad completa)
 
 ### Instalación Local
 
@@ -46,14 +46,14 @@ source venv/bin/activate  # En Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. **Configurar Firebase (opcional)**
+4. **Configurar Supabase**
 ```bash
 # Crear archivo .streamlit/secrets.toml
 mkdir .streamlit
 touch .streamlit/secrets.toml
 ```
 
-Añadir las credenciales de Firebase en `.streamlit/secrets.toml`:
+Añadir las credenciales de Supabase en `.streamlit/secrets.toml`:
 ```toml
 [supabase]
 SUPABASE_URL = "https://TU-PROYECTO.supabase.co"
@@ -82,7 +82,7 @@ PYTHONPATH=. streamlit run src/app.py
 AgroTech-Verde/
 ├── src/                    # Código fuente principal
 │   ├── models/            # Modelos de ML y entrenamiento
-│   ├── services/          # Servicios (predicción, Firebase, reentrenamiento)
+│   ├── services/          # Servicios (predicción, Supabase, reentrenamiento)
 │   ├── utils/             # Utilidades y validadores
 │   ├── config/            # Configuraciones centralizadas
 │   └── style.css          # Estilos CSS personalizados
